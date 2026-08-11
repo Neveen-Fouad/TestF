@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="vamora" x1="7" y1="5" x2="58" y2="62" gradientUnits="userSpaceOnUse"><stop stop-color="#0B1F4A"/><stop offset=".62" stop-color="#0B5CAD"/><stop offset="1" stop-color="#FF8A3D"/></linearGradient></defs>
+  <rect x="4" y="4" width="56" height="56" rx="17" fill="url(#vamora)"/>
+  <path d="M17 18L29.5 46H35L47 18H40.5L32.2 38.5L23.5 18H17Z" fill="white"/>
+  <circle cx="47" cy="17" r="5" fill="#FFD1B4"/>
+</svg>

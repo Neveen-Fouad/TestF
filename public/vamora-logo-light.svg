@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 108" role="img" aria-labelledby="title">
+  <title id="title">Vamora logo</title>
+  <defs>
+    <linearGradient id="mark" x1="14" y1="10" x2="88" y2="98" gradientUnits="userSpaceOnUse"><stop stop-color="#0D4FA7"/><stop offset="1" stop-color="#1AA9CC"/></linearGradient>
+    <linearGradient id="trail" x1="28" y1="32" x2="82" y2="78" gradientUnits="userSpaceOnUse"><stop stop-color="#FFB06E"/><stop offset="1" stop-color="#FF7043"/></linearGradient>
+  </defs>
+  <rect x="8" y="8" width="92" height="92" rx="28" fill="url(#mark)"/>
+  <path d="M25 28h16.3L54 67.6 71.2 28H86L60.4 82H50.7L25 28Z" fill="#fff"/>
+  <path d="M61.5 40.7c8.4 1.9 14.6 7.4 17.4 14.5" fill="none" stroke="url(#trail)" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="80.3" cy="59.3" r="6.3" fill="#FF8551" stroke="#FFF2E7" stroke-width="3"/>
+  <text x="122" y="72" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="55" font-weight="800" letter-spacing="-3">Vamo</text>
+  <text x="292" y="72" fill="#FFD0B5" font-family="Arial, Helvetica, sans-serif" font-size="55" font-weight="800" letter-spacing="-3">ra</text>
+</svg>
