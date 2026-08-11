@@ -1,0 +1,2 @@
+import { api } from "../shared/api.js"; import { mountNavigation, notify } from "../shared/navigation.js";
+mountNavigation(); document.querySelector("#contact-form").addEventListener("submit", async event => { event.preventDefault(); try { await api.contact(Object.fromEntries(new FormData(event.currentTarget))); event.currentTarget.reset(); notify("Your message was sent."); } catch (error) { notify(error.message, true); } });

@@ -1,0 +1,2 @@
+import { api } from "../shared/api.js"; import { mountNavigation, requireLogin, notify } from "../shared/navigation.js";
+mountNavigation("plan-a-trip"); if (requireLogin()) document.querySelector("#plan").addEventListener("submit", async event => { event.preventDefault(); try { const trip = (await api.trips.create(Object.fromEntries(new FormData(event.currentTarget)), true)).data || {}; notify("Joy created your trip."); location.assign(`/pages/trip-details.html?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });

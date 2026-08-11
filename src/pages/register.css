@@ -1,0 +1,1 @@
+@import "../shared/base.css";.register{display:grid;grid-template-columns:.8fr 1.2fr;gap:38px}.form{display:grid;gap:18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.map-help{margin:5px 0 9px;color:var(--muted)}@media(max-width:780px){.register,.form-grid{grid-template-columns:1fr}}
