@@ -22,8 +22,9 @@ export function mountSidebar(active = "") {
 export function requireAdmin() { if (!requireLogin()) return false; if (!session.isAdmin()) { location.assign("/pages/dashboard.html"); return false; } return true; }
 export function mountAdminSidebar(active = "") {
   const host = document.querySelector("[data-admin-sidebar]"); if (!host) return;
-  const links = [["Dashboard", "/pages/admin.html"], ["Users", "/pages/admin-users.html"], ["Create trip", "/pages/admin-create-trip.html"], ["Interests", "/pages/admin-interests.html"], ["Complaints", "/pages/admin-complaints.html"], ["Reviews", "/pages/admin-reviews.html"], ["Revenue", "/pages/admin-revenue.html"], ["Site settings", "/pages/admin-settings.html"]];
-  host.innerHTML = `<aside class="sidebar"><p>ADMINISTRATION</p>${links.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}</aside>`;
+  const links = [["Dashboard", "/pages/admin.html"], ["Users", "/pages/admin-users.html"], ["Trips", "/pages/admin-trips.html"], ["Create trip", "/pages/admin-create-trip.html"], ["Interests", "/pages/admin-interests.html"], ["Complaints", "/pages/admin-complaints.html"], ["Reviews", "/pages/admin-reviews.html"], ["Revenue", "/pages/admin-revenue.html"], ["Site settings", "/pages/admin-settings.html"]];
+  host.innerHTML = `<aside class="sidebar admin-sidebar"><a class="admin-brand" href="/pages/admin.html">Journovo <span>Admin</span></a><p>ADMINISTRATION</p>${links.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}<button class="admin-logout" type="button" data-admin-logout>Log out</button></aside>`;
+  host.querySelector("[data-admin-logout]").addEventListener("click", async () => { try { await api.auth.logout(); } catch {} session.clear(); location.assign("/pages/login.html"); });
 }
 export function notify(message, error = false) { const el = document.createElement("div"); el.className = `toast ${error ? "error" : ""}`; el.textContent = message; document.body.append(el); setTimeout(() => el.remove(), 3500); }
 export const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);

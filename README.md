@@ -58,7 +58,7 @@ The API client remains in `src/shared/api.js`. It preserves the existing endpoin
 | 28 | Payment | `/pages/payments.html` | Booking payment and payment history |
 | 29 | Interests / Preferences | `/pages/interests.html` | Select and save travel interests |
 | 30 | Settings | `/pages/settings.html` | Update account and travel profile settings |
-| 31 | Admin Dashboard | `/pages/admin.html` | Administrative summary and statistics |
+| 31 | Admin Dashboard | `/pages/admin.html` | Revenue, trip, and user statistics with charts and PDF export |
 | 32 | Manage Users | `/pages/admin-users.html` | View users and update account status |
 | 33 | Create a Trip (Manual) | `/pages/admin-create-trip.html` | Admin-only manual trip creation |
 | 34 | Manage Interests | `/pages/admin-interests.html` | Create and remove interest options |
@@ -68,3 +68,5 @@ The API client remains in `src/shared/api.js`. It preserves the existing endpoin
 | 38 | Site Settings | `/pages/admin-settings.html` | Create and update site settings and assets |
 
 Pages 17–30 require authentication. Pages 31–38 additionally require the authenticated user's role to be `admin`.
+
+The admin-only `/pages/admin-trips.html` route lists all trips returned to an administrator by `GET /trips`.

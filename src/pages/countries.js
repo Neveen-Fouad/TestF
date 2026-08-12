@@ -11,12 +11,15 @@ const markers = window.L.layerGroup().addTo(map);
 window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
 
 const countryName = country => country.name || country.country || country.title || "";
-const countryCode = country => country.code || country.country_code || country.iso2 || country.iso_code || "";
+const countryCode = country => country.code2 || country.code || country.country_code || country.iso2 || country.iso_code || "";
 const cityName = city => typeof city === "string" ? city : city?.name || city?.city || city?.title || "";
 const coordinates = attraction => {
   const location = attraction.location || attraction.coordinates || attraction.geometry?.location || {};
-  const latitude = Number(attraction.latitude ?? attraction.lat ?? location.latitude ?? location.lat);
-  const longitude = Number(attraction.longitude ?? attraction.lng ?? attraction.lon ?? location.longitude ?? location.lng ?? location.lon);
+  const rawLatitude = attraction.latitude ?? attraction.lat ?? location.latitude ?? location.lat;
+  const rawLongitude = attraction.longitude ?? attraction.lng ?? attraction.lon ?? location.longitude ?? location.lng ?? location.lon;
+  if (rawLatitude == null || rawLongitude == null || rawLatitude === "" || rawLongitude === "") return null;
+  const latitude = Number(rawLatitude);
+  const longitude = Number(rawLongitude);
   return Number.isFinite(latitude) && Number.isFinite(longitude) ? [latitude, longitude] : null;
 };
 const attractionRows = payload => {
@@ -42,7 +45,7 @@ async function loadAttractions() {
       const point = coordinates(attraction);
       if (point) {
         located.push(point);
-        window.L.marker(point).bindPopup(escapeHtml(name)).addTo(markers);
+        window.L.marker(point).bindPopup(`<strong>${escapeHtml(name)}</strong>${attraction.rating ? `<br>Rating: ${escapeHtml(attraction.rating)}` : ""}`).addTo(markers);
       }
       return `<article class="result-card"><p class="eyebrow">ATTRACTION</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(attraction.address || attraction.vicinity || attraction.description || "")}</p></article>`;
     }).join("") : '<div class="empty">No attractions were returned for this city.</div>';
@@ -66,7 +69,8 @@ countrySelect.addEventListener("change", async () => {
 form.addEventListener("submit", event => { event.preventDefault(); loadAttractions(); });
 
 try {
-  const countries = rows(await api.explore.countries());
+  const payload = await api.explore.countries();
+  const countries = payload?.countries || payload?.data?.countries || rows(payload);
   countrySelect.innerHTML = '<option value="">Select a country</option>' + countries.map(country => `<option value="${escapeHtml(countryName(country))}" data-code="${escapeHtml(countryCode(country))}" data-city="${escapeHtml(country.capital || cityName(country.cities?.[0]))}">${escapeHtml(countryName(country))}</option>`).join("");
   if (!countries.length) target.innerHTML = '<div class="empty">No countries are available.</div>';
 } catch (error) {

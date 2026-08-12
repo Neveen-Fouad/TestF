@@ -40,6 +40,19 @@ export async function request(path, { method = "GET", body, token = session.toke
   return payload;
 }
 
+export async function download(path, token = session.token()) {
+  const headers = { Accept: "application/pdf", "ngrok-skip-browser-warning": "true" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  let response;
+  try { response = await fetch(`${API_BASE_URL}${path}`, { headers }); }
+  catch { throw new ApiError("Unable to reach the travel API. Check its URL and CORS settings."); }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new ApiError(payload.message || "Report download failed.", response.status, payload.errors || {});
+  }
+  return { blob: await response.blob(), disposition: response.headers.get("Content-Disposition") || "" };
+}
+
 export const rows = payload => {
   const queue = [payload];
   const keys = ["data", "results", "hotels", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories"];
@@ -106,7 +119,8 @@ export const api = {
     updateSettings: (id, form) => { form.set("_method", "PATCH"); return request(`/admin/settings/${id}`, { method: "POST", body: form, form: true }); },
     statistics: () => request("/admin/statistics"),
     tripStatistics: () => request("/admin/trips/statistics"),
-    dashboardStatistics: () => request("/admin/dashboard/statistics"),
+    dashboardStatistics: (filters = {}) => request(`/admin/dashboard/statistics?${query(filters)}`),
+    exportDashboardPdf: (filters = {}) => download(`/admin/dashboard/export-pdf?${query(filters)}`),
     revenue: () => request("/revenue/total")
   }
 };
