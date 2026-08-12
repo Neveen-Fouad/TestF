@@ -1,0 +1,3 @@
+.explore-page {}
+
+.explore-page #map { border: 1px solid var(--line); }

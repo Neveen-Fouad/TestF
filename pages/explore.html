@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Explore | Journovo</title>
+<link rel="stylesheet" href="/src/pages/explore.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head><body><div data-navigation></div>
+<main class="page explore-page">
+  <p class="eyebrow">EXPLORE</p>
+  <h1>Discover attractions by destination</h1>
+  <p class="lead">Enter a city to see its attractions pinned on a map.</p>
+
+  <form id="explore-form" class="panel search-form" style="max-width:480px;margin:24px 0;">
+    <div class="search-grid" style="grid-template-columns:1fr auto;gap:12px;align-items:end;">
+      <div class="field">
+        <label>City or destination</label>
+        <input name="city" required placeholder="e.g. Cairo, Istanbul">
+      </div>
+      <button class="button" type="submit">Explore</button>
+    </div>
+  </form>
+
+  <div id="explore-status" style="margin-bottom:12px;color:var(--muted);"></div>
+
+  <div id="map" class="map" style="height:420px;border-radius:18px;margin-bottom:24px;display:none;"></div>
+
+  <div id="attractions" class="results"></div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="/src/pages/explore.js"></script>
+</body></html>

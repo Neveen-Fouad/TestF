@@ -66,21 +66,78 @@ export const api = {
     destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? `&country_code=${encodeURIComponent(code)}` : ""}`, { token: null })
   },
   hotels: {
-    search: filters => request(`/hotels?${query(filters)}`, { token: null }),
-    details: id => request(`/hotels/${encodeURIComponent(id)}`, { token: null })
+    // /hotels/search (SearchController@searchHotels) — requires destination, check_in, check_out, guests, budget
+    search: filters => request(`/hotels/search?${query(filters)}`, { token: null }),
+    details: id => request(`/hotels/details?hotel_id=${encodeURIComponent(id)}`, { token: null }),
+    book: body => request("/hotels/bookings", { method: "POST", body })
   },
-  restaurants: { list: (city, page = 0) => request(`/restaurants?${query({ city, page })}`, { token: null }) },
-  flights: { search: filters => request(`/flights?${query(filters)}`, { token: null }), details: id => request(`/flights/${encodeURIComponent(id)}`, { token: null }) },
+  restaurants: {
+    // city required, min_rating optional (3|4|5)
+    list: (city, min_rating) => request(`/restaurants?${query({ city, ...(min_rating ? { min_rating } : {}) })}`, { token: null }),
+    details: id => request(`/restaurants/details?id=${encodeURIComponent(id)}`, { token: null })
+  },
+  flights: {
+    searchAirport: query_str => request(`/flights/search-airport?query=${encodeURIComponent(query_str)}`, { token: null }),
+    search: filters => request(`/flights/search?${query(filters)}`, { token: null }),
+    details: id => request(`/flights/${encodeURIComponent(id)}`, { token: null }),
+    book: body => request("/flights/book", { method: "POST", body })
+  },
   trips: {
-    list: () => request("/trips"), create: (body, ai = false) => request(ai ? "/ai/trips" : "/trips", { method: "POST", body }),
-    show: id => request(`/trips/${id}`), days: id => request(`/trips/${id}/tripDays`), update: (id, body) => request(`/trips/${id}`, { method: "PUT", body }), remove: id => request(`/trips/${id}`, { method: "DELETE" })
+    list: () => request("/trips"),
+    create: (body, ai = false) => request(ai ? "/ai/trips" : "/trips", { method: "POST", body }),
+    show: id => request(`/trips/${id}`),
+    days: id => request(`/trips/${id}/tripDays`),
+    update: (id, body) => request(`/trips/${id}`, { method: "PUT", body }),
+    remove: id => request(`/trips/${id}`, { method: "DELETE" })
   },
-  memories: { list: tripId => request(`/trips/${tripId}/memories`), create: (tripId, form) => request(`/trips/${tripId}/memories`, { method: "POST", body: form, form: true }), remove: (tripId, memoryId) => request(`/trips/${tripId}/memories/${memoryId}`, { method: "DELETE" }) },
-  favourites: { list: () => request("/favourites"), add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }), remove: id => request(`/favourites/${id}`, { method: "DELETE" }) },
-  dashboard: { bookings: () => request("/dashboard/booking-history"), statistics: () => request("/dashboard/statistics"), settings: () => request("/dashboard/profile-settings"), updateSettings: body => request("/dashboard/profile-settings", { method: "PATCH", body }) },
-  profile: { get: () => request("/profile"), update: body => request("/profile", { method: "PATCH", body }), password: body => request("/profile/password", { method: "PATCH", body }) },
-  reviews: { list: () => request("/reviews"), mine: () => request("/reviews/my"), create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData }) },
-  notifications: { list: clientId => request(`/notifications/client/${clientId}`), unread: clientId => request(`/notifications/client/${clientId}/unread`) },
-  joy: { conversations: () => request("/chat/conversations"), show: id => request(`/chat/conversations/${id}`), send: (message, conversation_id) => request("/chat/messages", { method: "POST", body: { message, conversation_id } }) },
+  memories: {
+    list: tripId => request(`/trips/${tripId}/memories`),
+    create: (tripId, form) => request(`/trips/${tripId}/memories`, { method: "POST", body: form, form: true }),
+    remove: (tripId, memoryId) => request(`/trips/${tripId}/memories/${memoryId}`, { method: "DELETE" })
+  },
+  favourites: {
+    list: () => request("/favourites"),
+    add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }),
+    remove: id => request(`/favourites/${id}`, { method: "DELETE" })
+  },
+  bookings: {
+    // GET /bookings — all bookings for auth user (polymorphic list)
+    all: () => request("/bookings"),
+    hotels: () => request("/bookings/hotels"),
+    flights: () => request("/bookings/flights"),
+    // History via dashboard
+    history: () => request("/dashboard/booking-history")
+  },
+  payments: {
+    // GET /payments/client/{clientId}  POST /payments  GET /payments/{id}
+    list: clientId => request(`/payments/client/${clientId}`, { token: null }),
+    show: id => request(`/payments/${id}`, { token: null }),
+    create: (booking_id, client_id) => request("/payments", { method: "POST", body: { booking_id, client_id }, token: null })
+  },
+  dashboard: {
+    bookings: () => request("/dashboard/booking-history"),
+    statistics: () => request("/dashboard/statistics"),
+    settings: () => request("/dashboard/profile-settings"),
+    updateSettings: body => request("/dashboard/profile-settings", { method: "PATCH", body })
+  },
+  profile: {
+    get: () => request("/profile"),
+    update: body => request("/profile", { method: "PATCH", body }),
+    password: body => request("/profile/password", { method: "PATCH", body })
+  },
+  reviews: {
+    list: () => request("/reviews"),
+    mine: () => request("/reviews/my"),
+    create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData })
+  },
+  notifications: {
+    list: clientId => request(`/notifications/client/${clientId}`),
+    unread: clientId => request(`/notifications/client/${clientId}/unread`)
+  },
+  joy: {
+    conversations: () => request("/chat/conversations"),
+    show: id => request(`/chat/conversations/${id}`),
+    send: (message, conversation_id) => request("/chat/messages", { method: "POST", body: { message, conversation_id } })
+  },
   contact: body => request("/contact", { method: "POST", body, token: null })
 };

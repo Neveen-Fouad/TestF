@@ -1,6 +1,6 @@
 import { api, session } from "./api.js";
 
-const links = [["Home", "/"], ["Explore", "/pages/trips.html"], ["Hotels", "/pages/hotels.html"], ["Flights", "/pages/flights.html"], ["Plan a trip", "/pages/planner.html"]];
+const links = [["Home", "/"], ["Explore", "/pages/explore.html"], ["Hotels", "/pages/hotels.html"], ["Flights", "/pages/flights.html"], ["Restaurants", "/pages/restaurants.html"], ["Plan a trip", "/pages/planner.html"], ["Joy", "/pages/joy.html"]];
 const key = label => label.toLowerCase().replaceAll(" ", "-");
 
 export function mountNavigation(active = "") {
