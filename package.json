@@ -2,23 +2,8 @@
   "name": "journovo-travel",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": ">=22.13.0"
-  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint src --ignore-pattern dist"
+    "serve": "npx --yes serve ."
   },
-  "dependencies": {
-    "leaflet": "^1.9.4"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "eslint": "9.39.4",
-    "vite": "8.0.13"
-  },
-  "type": "module",
   "displayName": "Journovo Travel"
 }

@@ -1,23 +1,30 @@
 # Journovo
 
-Journovo is a vanilla JavaScript travel frontend powered by Vite. Each UI page has its own HTML, CSS, and JavaScript module under `pages/` and `src/pages/`.
+Journovo is a static travel frontend built with HTML5, CSS3, and native JavaScript modules. It has no framework, bundler, install step, or production build step.
 
 ## Run locally
 
-```bash
-npm install
-npm run dev
-```
-
-Set `VITE_API_BASE_URL` to point to the travel API when the default API address is not appropriate for your environment.
-
-## Build
+From the project root, start any static file server. For example:
 
 ```bash
-npm run build
+npx serve .
 ```
 
-The production files are written to `dist/`.
+You can also use VS Code Live Server, PhpStorm's built-in web server, Python's `python -m http.server 3000`, or copy the project into an XAMPP `htdocs` directory. Open the URL printed by the server; do not open the HTML files directly with a `file://` URL because browsers restrict JavaScript modules in that mode.
+
+No `npm install` or build command is required. The checked-in HTML, CSS, JavaScript, images, and vendored Leaflet files are served directly.
+
+## API configuration
+
+Edit `config.js` to point the frontend at a different backend API:
+
+```js
+window.JOURNOVO_CONFIG = Object.freeze({
+  API_BASE_URL: "http://127.0.0.1:8000/api"
+});
+```
+
+The API client remains in `src/shared/api.js`. It preserves the existing endpoints, JSON and multipart request handling, authorization header, JWT storage, and response parsing.
 
 ## Key areas
 
@@ -25,6 +32,8 @@ The production files are written to `dist/`.
 - `src/shared/navigation.js` renders the shared navbar and guest/member-aware sidebar.
 - `pages/` contains one HTML entry point per UI page.
 - `src/pages/` contains the paired page CSS and page logic.
+- `config.js` supplies runtime configuration without a bundler or environment-variable transform.
+- `vendor/leaflet/` contains the browser build used by the registration location map.
 
 ## Completed application routes (12–38)
 
