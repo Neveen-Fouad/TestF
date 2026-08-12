@@ -1,8 +1,8 @@
 import { api } from "../shared/api.js";
-import { escapeHtml, mountNavigation, notify, requireAdmin } from "../shared/navigation.js";
+import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
 
 mountNavigation("plan-a-trip");
-if (requireAdmin()) document.querySelector("#plan").addEventListener("submit", async event => {
+if (requireLogin()) document.querySelector("#plan").addEventListener("submit", async event => {
   event.preventDefault();
   const form = event.currentTarget;
   const button = form.querySelector("button");

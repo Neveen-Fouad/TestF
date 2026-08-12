@@ -70,3 +70,28 @@ The API client remains in `src/shared/api.js`. It preserves the existing endpoin
 Pages 17–30 require authentication. Pages 31–38 additionally require the authenticated user's role to be `admin`.
 
 The admin-only `/pages/admin-trips.html` route lists all trips returned to an administrator by `GET /trips`.
+
+## Front enhancement remediation
+
+The following frontend improvements from the Front Enhancement task have been implemented:
+
+- Registration now submits `longitude` and `latitude` from the map instead of the misspelled location fields.
+- Login remains successful when the optional profile request fails after authentication.
+- `session.updateUser()` merges profile updates into the stored user rather than replacing the complete session user.
+- `session.clientId()` provides one consistent client-ID lookup for notifications and payments.
+- The standard trip planner now requires a logged-in user instead of an administrator.
+- Dynamic values in favorites, bookings, reviews, comparison results, and related error messages are HTML-escaped before rendering.
+- Hotel booking converts `guests` and `rooms` to numbers; flight booking converts `adults` to a number.
+- Administrators receive direct `Admin` and `Create trip` links in the main navigation.
+- Logged-in users can submit a review with a title, rating, comment, and optional image.
+- Notifications support per-item `Mark read` actions and a `Mark all read` action with an updated unread badge.
+- Compared hotels can be removed, and amenities render safely whether the API returns an array or a string.
+- Payment and notification pages use the shared client-ID resolver.
+
+Verification completed for this remediation:
+
+- JavaScript syntax checks passed for every changed module.
+- The affected static HTML routes returned HTTP 200 from a local server.
+- Session merging and nested client-ID resolution checks passed.
+- Targeted checks confirmed every remediation item and the removal of the legacy registration typo.
+- `git diff --check` passed.

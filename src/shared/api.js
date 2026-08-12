@@ -21,7 +21,13 @@ export const session = {
     if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
     if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
   },
-  updateUser(user) { if (user) localStorage.setItem(USER_KEY, JSON.stringify(user)); },
+  updateUser(user) {
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify({ ...(session.user() || {}), ...user }));
+  },
+  clientId() {
+    const user = session.user();
+    return user?.client_id || user?.client?.id || user?.id || null;
+  },
   clear() { localStorage.removeItem(ACCESS_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY); }
 };
 
