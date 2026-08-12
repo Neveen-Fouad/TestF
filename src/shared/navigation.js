@@ -1,13 +1,14 @@
 import { api, session } from "./api.js";
 
-const links = [["Home", "/"], ["Explore", "/pages/trips.html"], ["Hotels", "/pages/hotels.html"], ["Flights", "/pages/flights.html"], ["Plan a trip", "/pages/planner.html"]];
+const links = [["Home", "/"], ["Explore", "/pages/countries.html"], ["Hotels", "/pages/hotels.html"], ["Restaurants", "/pages/restaurants.html"], ["Flights", "/pages/flights.html"]];
 const key = label => label.toLowerCase().replaceAll(" ", "-");
 
 export function mountNavigation(active = "") {
   const host = document.querySelector("[data-navigation]");
   if (!host) return;
   const loggedIn = session.isLoggedIn(); const user = session.user();
-  host.innerHTML = `<header class="topbar"><a class="brand" href="/">Journovo</a><button class="menu-toggle" aria-label="Toggle navigation">☰</button><nav>${links.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}${loggedIn ? '<a href="/pages/notifications.html" aria-label="Notifications">Updates</a>' : ""}</nav><div class="nav-actions">${loggedIn ? `<a class="profile-link" href="/pages/profile.html">${user?.first_name || user?.name || "Profile"}</a><button class="button subtle" data-logout>Log out</button>` : '<a class="button subtle" href="/pages/login.html">Sign in</a><a class="button" href="/pages/register.html">Create account</a>'}</div></header>`;
+  const navigationLinks = session.isAdmin() ? [...links, ["Plan a trip", "/pages/admin-create-trip.html"]] : links;
+  host.innerHTML = `<header class="topbar"><a class="brand" href="/">Journovo</a><button class="menu-toggle" aria-label="Toggle navigation">☰</button><nav>${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}${loggedIn ? '<a href="/pages/joy.html" aria-label="Chat with Joy">✦ Joy</a><a href="/pages/notifications.html" aria-label="Notifications">🔔 Notifications</a>' : ""}</nav><div class="nav-actions">${loggedIn ? `<a class="profile-link" href="/pages/profile.html">${user?.first_name || user?.name || "Profile"}</a><button class="button subtle" data-logout>Log out</button>` : '<a class="button subtle" href="/pages/login.html">Sign in</a><a class="button" href="/pages/register.html">Create account</a>'}</div></header>`;
   host.querySelector(".menu-toggle").addEventListener("click", () => host.querySelector("nav").classList.toggle("open"));
   host.querySelector("[data-logout]")?.addEventListener("click", async () => { try { await api.auth.logout(); } catch {} session.clear(); location.assign("/"); });
 }
