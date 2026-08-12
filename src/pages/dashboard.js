@@ -8,7 +8,7 @@ if (requireLogin()) {
   const [statsResult, tripsResult] = await Promise.allSettled([api.dashboard.statistics(), api.trips.list()]);
   const statsTarget = document.querySelector("#stats");
   if (statsResult.status === "fulfilled") {
-    const data = statsResult.value?.data || statsResult.value || {};
+    const data = statsResult.value?.data?.statistics || statsResult.value?.data || statsResult.value || {};
     const entries = Object.entries(data).filter(([, value]) => typeof value !== "object").slice(0, 4);
     statsTarget.innerHTML = entries.length ? entries.map(([label, value]) => `<article class="stat-card"><span>${escapeHtml(label.replaceAll("_", " "))}</span><b>${escapeHtml(value)}</b></article>`).join("") : '<div class="empty">Your travel summary will appear here once you start planning.</div>';
   } else statsTarget.innerHTML = '<div class="empty">Your summary is not available yet.</div>';

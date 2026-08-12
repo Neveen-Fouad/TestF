@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://61a8-197-52-104-51.ngrok-free.app/api").replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api").replace(/\/$/, "");
 const ACCESS_KEY = "journovo_access_token";
 const REFRESH_KEY = "journovo_refresh_token";
 const USER_KEY = "journovo_user";
@@ -40,11 +40,16 @@ export async function request(path, { method = "GET", body, token = session.toke
   return payload;
 }
 
-export const rows = (payload) => {
-  const value = payload?.data?.data ?? payload?.data ?? payload?.results ?? payload ?? [];
-  if (Array.isArray(value)) return value;
-  for (const key of ["hotels", "itineraries", "restaurants", "items", "notifications"]) if (Array.isArray(value?.[key])) return value[key];
-  return Array.isArray(value?.data) ? value.data : [];
+export const rows = payload => {
+  const queue = [payload];
+  const keys = ["data", "results", "hotels", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories"];
+  while (queue.length) {
+    const value = queue.shift();
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") continue;
+    for (const key of keys) if (value[key] != null) queue.push(value[key]);
+  }
+  return [];
 };
 
 const query = values => new URLSearchParams(Object.entries(values).filter(([, value]) => value !== "" && value != null)).toString();
@@ -66,21 +71,42 @@ export const api = {
     destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? `&country_code=${encodeURIComponent(code)}` : ""}`, { token: null })
   },
   hotels: {
-    search: filters => request(`/hotels?${query(filters)}`, { token: null }),
-    details: id => request(`/hotels/${encodeURIComponent(id)}`, { token: null })
+    search: filters => request(`/hotels/search?${query(filters)}`, { token: null }),
+    details: id => request(`/hotels/details?hotel_id=${encodeURIComponent(id)}`, { token: null }),
+    book: body => request("/hotels/bookings", { method: "POST", body })
   },
   restaurants: { list: (city, page = 0) => request(`/restaurants?${query({ city, page })}`, { token: null }) },
-  flights: { search: filters => request(`/flights?${query(filters)}`, { token: null }), details: id => request(`/flights/${encodeURIComponent(id)}`, { token: null }) },
+  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), details: id => request(`/flights/${encodeURIComponent(id)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
   trips: {
     list: () => request("/trips"), create: (body, ai = false) => request(ai ? "/ai/trips" : "/trips", { method: "POST", body }),
-    show: id => request(`/trips/${id}`), days: id => request(`/trips/${id}/tripDays`), update: (id, body) => request(`/trips/${id}`, { method: "PUT", body }), remove: id => request(`/trips/${id}`, { method: "DELETE" })
+    show: id => request(`/trips/${id}`), update: (id, body) => request(`/trips/${id}`, { method: "PUT", body }), remove: id => request(`/trips/${id}`, { method: "DELETE" })
   },
   memories: { list: tripId => request(`/trips/${tripId}/memories`), create: (tripId, form) => request(`/trips/${tripId}/memories`, { method: "POST", body: form, form: true }), remove: (tripId, memoryId) => request(`/trips/${tripId}/memories/${memoryId}`, { method: "DELETE" }) },
   favourites: { list: () => request("/favourites"), add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }), remove: id => request(`/favourites/${id}`, { method: "DELETE" }) },
-  dashboard: { bookings: () => request("/dashboard/booking-history"), statistics: () => request("/dashboard/statistics"), settings: () => request("/dashboard/profile-settings"), updateSettings: body => request("/dashboard/profile-settings", { method: "PATCH", body }) },
+  dashboard: { bookings: () => request("/bookings"), statistics: () => request("/dashboard/statistics"), settings: () => request("/dashboard/profile-settings"), updateSettings: body => request("/dashboard/profile-settings", { method: "PATCH", body }) },
+  interests: { mine: () => request("/client/interests"), update: interests => request("/client/interests", { method: "PUT", body: { interests } }) },
   profile: { get: () => request("/profile"), update: body => request("/profile", { method: "PATCH", body }), password: body => request("/profile/password", { method: "PATCH", body }) },
   reviews: { list: () => request("/reviews"), mine: () => request("/reviews/my"), create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData }) },
-  notifications: { list: clientId => request(`/notifications/client/${clientId}`), unread: clientId => request(`/notifications/client/${clientId}/unread`) },
+  notifications: { list: clientId => request(`/notifications/client/${clientId}`), unread: clientId => request(`/notifications/client/${clientId}/unread`), unreadCount: clientId => request(`/notifications/client/${clientId}/unread-count`), read: id => request(`/notifications/${id}/read`, { method: "PATCH" }), readAll: clientId => request(`/notifications/client/${clientId}/read-all`, { method: "PATCH" }) },
+  payments: { list: clientId => request(`/payments/client/${clientId}`), show: id => request(`/payments/${id}`), create: (booking_id, client_id) => request("/payments", { method: "POST", body: { booking_id, client_id } }) },
   joy: { conversations: () => request("/chat/conversations"), show: id => request(`/chat/conversations/${id}`), send: (message, conversation_id) => request("/chat/messages", { method: "POST", body: { message, conversation_id } }) },
-  contact: body => request("/contact", { method: "POST", body, token: null })
+  contact: body => request("/contact", { method: "POST", body, token: null }),
+  admin: {
+    users: () => request("/admin/users"),
+    userStatus: (id, is_active) => request(`/admin/users/${id}/status`, { method: "PATCH", body: { is_active } }),
+    reviews: () => request("/admin/reviews"),
+    reviewDecision: (id, decision) => request(`/admin/reviews/${id}/${decision}`, { method: "POST" }),
+    messages: () => request("/admin/contact-messages"),
+    messageStatus: (id, status) => request(`/admin/contact-messages/${id}/status`, { method: "PATCH", body: { status } }),
+    interests: () => request("/admin/interests"),
+    createInterest: body => request("/admin/interests", { method: "POST", body }),
+    removeInterest: id => request(`/admin/interests/${id}`, { method: "DELETE" }),
+    settings: () => request("/admin/settings"),
+    createSettings: form => request("/admin/settings", { method: "POST", body: form, form: true }),
+    updateSettings: (id, form) => { form.set("_method", "PATCH"); return request(`/admin/settings/${id}`, { method: "POST", body: form, form: true }); },
+    statistics: () => request("/admin/statistics"),
+    tripStatistics: () => request("/admin/trips/statistics"),
+    dashboardStatistics: () => request("/admin/dashboard/statistics"),
+    revenue: () => request("/revenue/total")
+  }
 };
