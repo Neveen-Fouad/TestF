@@ -1,2 +1,11 @@
 @import "../shared/base.css";
-.hero{background:linear-gradient(115deg,#edf6ff,#fff4ee);margin:0 -24px;padding-left:24px;padding-right:24px;border-radius:0 0 30px 30px}.hero .button{margin-top:12px}
+
+.hero {
+  margin: 0 -24px;
+  padding-right: 24px;
+  padding-left: 24px;
+  border-radius: 0 0 30px 30px;
+  background: radial-gradient(circle at 87% 18%, #fff2e7 0 7%, transparent 29%), linear-gradient(118deg, #edf8ff, var(--sky) 62%, #f9fcff);
+}
+
+.hero .button { margin-top: 12px; }
