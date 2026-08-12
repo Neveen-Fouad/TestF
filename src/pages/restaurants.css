@@ -1,1 +1,2 @@
-@import "../shared/base.css";
+@import "./hotels.css";
+.restaurant-grid{grid-template-columns:minmax(220px,.7fr) minmax(150px,.3fr);max-width:600px}@media(max-width:540px){.restaurant-grid{grid-template-columns:1fr}}

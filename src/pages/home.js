@@ -1,5 +1,9 @@
 import { api, rows } from "../shared/api.js";
-import { mountNavigation } from "../shared/navigation.js";
+import { escapeHtml, mountNavigation } from "../shared/navigation.js";
+
 mountNavigation("home");
 const target = document.querySelector("#home-trips");
-try { const trips = rows(await api.trips.list()); target.innerHTML = trips.length ? trips.slice(0, 6).map(trip => `<article class="card"><div class="eyebrow">${trip.country || trip.destination || "JOURNEY"}</div><h3>${trip.name || trip.title || "Untitled trip"}</h3><p>${trip.description || trip.duration || "Open this journey to see the full plan."}</p><a class="button subtle" href="/pages/trip-details.html?id=${encodeURIComponent(trip.id)}">View itinerary</a></article>`).join("") : '<div class="empty">No journeys are available right now.</div>'; } catch (error) { target.innerHTML = `<div class="empty">${error.message}</div>`; }
+try {
+  const trips = rows(await api.trips.list());
+  target.innerHTML = trips.length ? trips.slice(0, 3).map((trip, index) => `<article class="journey-card"><div class="journey-number">0${index + 1}</div><div><p class="eyebrow">${escapeHtml(trip.destination || trip.country || "JOURNEY")}</p><h3>${escapeHtml(trip.name || trip.title || "A journey to make your own")}</h3><p>${escapeHtml(trip.description || trip.duration || "A thoughtfully paced escape, ready for your personal touch.")}</p></div><a class="text-action" href="/pages/trip-details.html?id=${encodeURIComponent(trip.id)}">View itinerary <span>→</span></a></article>`).join("") : '<div class="empty">New journeys will appear here soon.</div>';
+} catch { target.innerHTML = '<div class="empty">Journeys are unavailable right now. You can still start a plan of your own.</div>'; }
