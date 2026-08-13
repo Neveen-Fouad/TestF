@@ -40,7 +40,7 @@ let refreshRequest;
 
 async function refreshAccessToken() {
   if (refreshRequest) return refreshRequest;
-  const token = session.refreshToken() || session.token();
+  const token = session.token();
   if (!token) return null;
   refreshRequest = fetch(`${API_BASE_URL}/auth/refresh`, {
     method: "POST",
@@ -54,7 +54,33 @@ async function refreshAccessToken() {
   return refreshRequest;
 }
 
+function tokenSecondsRemaining(token) {
+  try {
+    const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '=')));
+    return typeof payload.exp === 'number' ? payload.exp - Math.floor(Date.now() / 1000) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function request(path, { method = "GET", body, token = session.token(), form = false, retry = true } = {}) {
+  if (token && retry && path !== "/auth/refresh") {
+    const secondsRemaining = tokenSecondsRemaining(token);
+    if (secondsRemaining !== null && secondsRemaining <= 0) {
+      session.clear();
+      window.dispatchEvent(new CustomEvent("journovo:unauthorized"));
+      throw new ApiError("Your session expired. Please sign in again.", 401);
+    }
+    if (secondsRemaining !== null && secondsRemaining <= 60) {
+      token = await refreshAccessToken();
+      if (!token) {
+        session.clear();
+        window.dispatchEvent(new CustomEvent("journovo:unauthorized"));
+        throw new ApiError("Your session expired. Please sign in again.", 401);
+      }
+    }
+  }
   const headers = { Accept: "application/json", "ngrok-skip-browser-warning": "true" };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body && !form) headers["Content-Type"] = "application/json";
@@ -62,12 +88,7 @@ export async function request(path, { method = "GET", body, token = session.toke
   try { response = await fetch(`${API_BASE_URL}${path}`, { method, headers, body: body ? (form ? body : JSON.stringify(body)) : undefined }); }
   catch { throw new ApiError("Unable to reach the travel API. Check its URL and CORS settings."); }
   const payload = await response.json().catch(() => ({}));
-  if (response.status === 401 && token && retry && path !== "/auth/refresh") {
-    const refreshedToken = await refreshAccessToken();
-    if (refreshedToken) return request(path, { method, body, token: refreshedToken, form, retry: false });
-    session.clear();
-    window.dispatchEvent(new CustomEvent("journovo:unauthorized"));
-  } else if (response.status === 401 && token) {
+  if (response.status === 401 && token) {
     session.clear();
     window.dispatchEvent(new CustomEvent("journovo:unauthorized"));
   }
@@ -108,11 +129,7 @@ const query = values => new URLSearchParams(Object.entries(values).filter(([, va
 export const api = {
   auth: {
     login: body => request("/auth/login", { method: "POST", body, token: null }),
-    register: body => request("/auth/register", {
-      method: "POST",
-      body: { ...body, long: body.long ?? body.longitude, latittude: body.latittude ?? body.latitude },
-      token: null
-    }),
+    register: body => request("/auth/register", { method: "POST", body, token: null }),
     logout: () => request("/auth/logout", { method: "POST" }),
     forgot: email => request("/auth/forgot-password", { method: "POST", body: { email }, token: null }),
     reset: body => request("/auth/reset-password", { method: "POST", body, token: null }),
@@ -131,7 +148,7 @@ export const api = {
     book: body => request("/hotels/bookings", { method: "POST", body })
   },
   restaurants: { list: (city, page = 0) => request(`/restaurants?${query({ city, page })}`, { token: null }) },
-  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), details: id => request(`/flights/${encodeURIComponent(id)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
+  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
   trips: {
     list: () => request("/trips"),
     preMade: () => request("/trips/pre-made", { token: null }),
@@ -162,7 +179,7 @@ export const api = {
     remove: id => request(`/reviews/${encodeURIComponent(id)}`, { method: "DELETE" })
   },
   notifications: { list: clientId => request(`/notifications/client/${clientId}`), unread: clientId => request(`/notifications/client/${clientId}/unread`), unreadCount: clientId => request(`/notifications/client/${clientId}/unread-count`), read: id => request(`/notifications/${id}/read`, { method: "PATCH" }), readAll: clientId => request(`/notifications/client/${clientId}/read-all`, { method: "PATCH" }) },
-  payments: { list: clientId => request(`/payments/client/${clientId}`), show: id => request(`/payments/${id}`), create: (booking_id, client_id) => request("/payments", { method: "POST", body: { booking_id, client_id } }) },
+  payments: { list: clientId => request(`/payments/client/${clientId}`), show: id => request(`/payments/${id}`), create: booking_id => request("/payments", { method: "POST", body: { booking_id } }) },
   joy: { conversations: () => request("/chat/conversations"), show: id => request(`/chat/conversations/${id}`), send: (message, conversation_id) => request("/chat/messages", { method: "POST", body: { message, conversation_id } }) },
   transportation: { tips: body => request("/transportation/tips", { method: "POST", body }) },
   contact: body => request("/contact", { method: "POST", body, token: null }),

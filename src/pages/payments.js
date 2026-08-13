@@ -21,7 +21,7 @@ if (requireLogin()) {
     form.addEventListener("submit", async event => {
       event.preventDefault();
       try {
-        const result = await api.payments.create(bookingId, clientId);
+        const result = await api.payments.create(bookingId);
         notify("Payment created successfully.");
         if (result.checkout_url) location.assign(result.checkout_url);
         else setTimeout(() => location.assign("/pages/bookings.html"), 700);

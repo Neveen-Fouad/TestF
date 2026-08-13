@@ -28,7 +28,7 @@ The API client remains in `src/shared/api.js`. It preserves the existing endpoin
 
 ## Key areas
 
-- `src/shared/api.js` centralizes API requests, session storage, one-time access-token refresh, and unauthorized-session handling.
+- `src/shared/api.js` centralizes API requests, session storage, proactive valid-JWT refresh, and unauthorized-session handling.
 - `src/shared/navigation.js` renders the shared navbar and guest/member-aware sidebar.
 - `pages/` contains one HTML entry point per UI page.
 - `src/pages/` contains the paired page CSS and page logic.
@@ -73,22 +73,25 @@ The admin-only `/pages/admin-trips.html` route lists all trips returned to an ad
 
 ## Backend integration
 
-The frontend is being aligned with the Laravel API in the [`project` branch](https://github.com/sarah-548/conference_c1/tree/project). The current integration uses these distinctions:
+The frontend is aligned with the Laravel API in the [`mohand2` branch](https://github.com/sarah-548/conference_c1/tree/mohand2). The current integration uses these distinctions:
 
 - Public curated journeys use `GET /trips/pre-made`.
 - Authenticated member trips use `GET /trips`.
 - Daily itinerary details use `GET /trips/{trip}/tripDays`.
 - Regular-user planning submits to `POST /ai/trips`; administrators use `POST /trips` for manual creation.
-- Reviews submit `client_id`, `reviewable_id`, `type`, `rating`, `description`, and an optional JPEG or PNG image.
-- The API client temporarily sends legacy `long` and `latittude` registration aliases in addition to the canonical frontend fields `longitude` and `latitude`. Remove the aliases after the backend request and database fields are corrected.
+- Reviews submit `reviewable_id`, `type`, `rating`, `description`, and an optional JPEG or PNG image. Ownership comes from the authenticated JWT.
+- Registration sends canonical `longitude` and `latitude` fields; the backend maps them to the existing database columns.
+- Registration and login return a real `client_id`, which is used for payment and notification URLs.
+- Payment creation sends only `booking_id`; the backend derives and verifies the client from the JWT.
+- JWT refresh is sent proactively while the current token is still valid, matching the authenticated refresh endpoint.
 
-The backend must return a real `client_id` (or a loaded `client.id`) in the login or profile response. The frontend intentionally does not treat `user.id` as `client.id`, because those are separate database records. Until that response is added, payments, reviews, and notifications show an unavailable-client message instead of sending requests for the wrong account.
+The frontend intentionally never treats `user.id` as `client.id`, because those are separate database records. The current backend returns the correct value during registration, login, and profile retrieval.
 
 ## Front enhancement remediation
 
 The following frontend improvements from the Front Enhancement task have been implemented:
 
-- Registration uses canonical `longitude` and `latitude` map fields, with temporary API-only aliases for the current backend contract.
+- Registration uses canonical `longitude` and `latitude` map fields.
 - Login remains successful when the optional profile request fails after authentication.
 - `session.updateUser()` merges profile updates into the stored user rather than replacing the complete session user.
 - `session.clientId()` provides one consistent client-ID lookup for notifications and payments.

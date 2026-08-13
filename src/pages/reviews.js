@@ -1,4 +1,4 @@
-import { api, rows, session } from "../shared/api.js";
+import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
 
 mountNavigation();
@@ -12,9 +12,6 @@ if (requireLogin()) {
     button.disabled = true;
     try {
       const data = new FormData(form);
-      const clientId = session.clientId();
-      if (!clientId) throw new Error("Your account is missing its client profile ID. Please sign in again after the backend profile response is updated.");
-      data.set("client_id", String(clientId));
       if (!data.get("image")?.size) data.delete("image");
       await api.reviews.create(data);
       form.reset();

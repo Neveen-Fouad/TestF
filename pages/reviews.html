@@ -17,7 +17,7 @@
     <form id="review-form" class="panel form" enctype="multipart/form-data">
       <div class="form-grid">
         <div class="field"><label>Review type</label><select name="type" required><option value="trip">Trip</option><option value="hotel">Hotel</option><option value="restaurant">Restaurant</option><option value="flight">Flight</option></select></div>
-        <div class="field"><label>Item ID</label><input name="reviewable_id" type="number" min="1" required><small>Use the trip, hotel, restaurant, or flight ID shown in its details.</small></div>
+        <div class="field"><label>Item ID</label><input name="reviewable_id" type="text" maxlength="500" required><small>Use the trip, hotel, restaurant, or flight ID shown in its details.</small></div>
         <div class="field"><label>Rating</label><select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></div>
       </div>
       <div class="field"><label>Review</label><textarea name="description" rows="5" required maxlength="2000"></textarea></div>
