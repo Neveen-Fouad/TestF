@@ -5,7 +5,17 @@ mountNavigation();
 if (requireLogin()) {
   mountSidebar("profile");
   const profileForm = document.querySelector("#profile-form");
-  const fill = user => { const value = { ...(user || {}), ...(user?.client || {}) }; ["first_name", "last_name", "email", "phone", "birth_date"].forEach(key => { if (profileForm.elements[key]) profileForm.elements[key].value = value[key] || ""; }); document.querySelector("#profile-name").textContent = `${value.first_name || ""} ${value.last_name || ""}`.trim() || value.name || "Traveller"; document.querySelector("#profile-summary").innerHTML = `<p>${value.email || "No email available"}</p><p>${value.phone || "No phone added"}</p><p>${value.birth_date || "No birth date added"}</p>`; };
+  const fill = user => {
+    const value = { ...(user || {}), ...(user?.client || {}) };
+    ["first_name", "last_name", "email", "phone", "birth_date"].forEach(key => { if (profileForm.elements[key]) profileForm.elements[key].value = value[key] || ""; });
+    document.querySelector("#profile-name").textContent = `${value.first_name || ""} ${value.last_name || ""}`.trim() || value.name || "Traveller";
+    const summary = document.querySelector("#profile-summary");
+    summary.replaceChildren(...[value.email || "No email available", value.phone || "No phone added", value.birth_date || "No birth date added"].map(text => {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      return paragraph;
+    }));
+  };
   fill(session.user());
   try { const [profilePayload, settingsPayload] = await Promise.all([api.profile.get(), api.dashboard.settings()]); const profile = profilePayload?.data?.profile || profilePayload?.data || profilePayload; const settings = settingsPayload?.data?.profileSettings || {}; fill({ ...settings, ...profile }); } catch {}
   document.querySelectorAll("[data-toggle]").forEach(button => button.addEventListener("click", () => { const form = document.querySelector(`#${button.dataset.toggle}`); form.hidden = !form.hidden; button.setAttribute("aria-expanded", String(!form.hidden)); }));

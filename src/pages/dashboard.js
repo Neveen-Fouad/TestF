@@ -5,7 +5,7 @@ mountNavigation();
 if (requireLogin()) {
   mountSidebar("dashboard");
   document.querySelector("#member-name").textContent = session.user()?.first_name || session.user()?.name || "traveller";
-  const [statsResult, tripsResult] = await Promise.allSettled([api.dashboard.statistics(), api.trips.list()]);
+  const [statsResult, tripsResult] = await Promise.allSettled([api.dashboard.statistics(), api.dashboard.savedTrips()]);
   const statsTarget = document.querySelector("#stats");
   if (statsResult.status === "fulfilled") {
     const data = statsResult.value?.data?.statistics || statsResult.value?.data || statsResult.value || {};

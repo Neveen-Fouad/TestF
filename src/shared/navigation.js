@@ -8,9 +8,22 @@ export function mountNavigation(active = "") {
   if (!host) return;
   const loggedIn = session.isLoggedIn(); const user = session.user();
   const navigationLinks = session.isAdmin() ? [...links, ["Admin", "/pages/admin.html"], ["Create trip", "/pages/admin-create-trip.html"]] : links;
-  host.innerHTML = `<header class="topbar"><a class="brand" href="/">Journovo</a><button class="menu-toggle" aria-label="Toggle navigation">☰</button><nav>${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}${loggedIn ? '<a href="/pages/joy.html" aria-label="Chat with Joy">✦ Joy</a><a href="/pages/notifications.html" aria-label="Notifications">🔔 Notifications</a>' : ""}</nav><div class="nav-actions">${loggedIn ? `<a class="profile-link" href="/pages/profile.html">${user?.first_name || user?.name || "Profile"}</a><button class="button subtle" data-logout>Log out</button>` : '<a class="button subtle" href="/pages/login.html">Sign in</a><a class="button" href="/pages/register.html">Create account</a>'}</div></header>`;
-  host.querySelector(".menu-toggle").addEventListener("click", () => host.querySelector("nav").classList.toggle("open"));
+  const profileName = escapeHtml(user?.first_name || user?.name || "Profile");
+  host.innerHTML = `<header class="topbar"><a class="brand" href="/">Journovo</a><button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav>${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" href="${url}">${label}</a>`).join("")}${loggedIn ? '<a href="/pages/joy.html" aria-label="Chat with Joy">✦ Joy</a><a class="notification-link" href="/pages/notifications.html" aria-label="Notifications">🔔 Notifications <span class="nav-badge" data-nav-unread hidden></span></a>' : ""}</nav><div class="nav-actions">${loggedIn ? `<a class="profile-link" href="/pages/profile.html">${profileName}</a><button class="button subtle" data-logout>Log out</button>` : '<a class="button subtle" href="/pages/login.html">Sign in</a><a class="button" href="/pages/register.html">Create account</a>'}</div></header>`;
+  host.querySelector(".menu-toggle").addEventListener("click", event => {
+    const open = host.querySelector("nav").classList.toggle("open");
+    event.currentTarget.setAttribute("aria-expanded", String(open));
+  });
   host.querySelector("[data-logout]")?.addEventListener("click", async () => { try { await api.auth.logout(); } catch {} session.clear(); location.assign("/"); });
+  const clientId = session.clientId();
+  if (loggedIn && clientId) api.notifications.unreadCount(clientId).then(payload => {
+    const count = Number(payload?.unread_count || payload?.data?.unread_count || 0);
+    const badge = host.querySelector("[data-nav-unread]");
+    if (!badge || !count) return;
+    badge.hidden = false;
+    badge.textContent = count > 99 ? "99+" : String(count);
+    badge.closest("a").setAttribute("aria-label", `Notifications, ${count} unread`);
+  }).catch(() => {});
 }
 
 export function requireLogin() { if (!session.isLoggedIn()) { location.assign(`/pages/login.html?returnTo=${encodeURIComponent(location.pathname + location.search)}`); return false; } return true; }
@@ -28,3 +41,8 @@ export function mountAdminSidebar(active = "") {
 }
 export function notify(message, error = false) { const el = document.createElement("div"); el.className = `toast ${error ? "error" : ""}`; el.textContent = message; document.body.append(el); setTimeout(() => el.remove(), 3500); }
 export const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+
+window.addEventListener("journovo:unauthorized", () => {
+  const returnTo = encodeURIComponent(location.pathname + location.search);
+  if (!location.pathname.endsWith("/login.html")) location.assign(`/pages/login.html?returnTo=${returnTo}`);
+});

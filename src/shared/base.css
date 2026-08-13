@@ -24,6 +24,8 @@ button { cursor: pointer; }
 .brand::first-letter { color: var(--warm); }
 .topbar nav { display: flex; flex: 1; gap: 22px; }
 .topbar nav a { padding: 28px 0 24px; color: #476486; font-weight: 700; }
+.notification-link { display: inline-flex; align-items: center; gap: 6px; }
+.nav-badge { min-width: 19px; padding: 2px 5px; border-radius: 999px; background: #c33b3b; color: #fff; font-size: 11px; line-height: 1.35; text-align: center; }
 .topbar nav a.active, .topbar nav a:hover { color: var(--blue); border-bottom: 3px solid var(--blue); }
 .nav-actions { display: flex; align-items: center; gap: 10px; }
 .profile-link { font-weight: 700; }
