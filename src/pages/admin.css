@@ -41,3 +41,16 @@ body[data-admin-page] .page.split,.admin-shell{grid-template-columns:250px minma
 
 @media(max-width:1050px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-heading{flex-direction:column}.admin-period{justify-content:flex-start}}
 @media(max-width:780px){body[data-admin-page] .page.split,.admin-shell{grid-template-columns:1fr}.admin-sidebar{position:static;min-height:auto}.admin-sidebar:not(.open){display:none}.admin-sidebar a{display:block}.admin-logout{margin-top:20px}.admin-main,body[data-admin-page] .page.split>section{padding:30px 18px}.admin-charts,.admin-metrics,.form-grid{grid-template-columns:1fr}.admin-chart-card:first-child{grid-column:auto}.admin-period{width:100%}.admin-period label{flex:1}.admin-period select,.admin-period input{width:100%}}
+
+/* Refined administration surfaces */
+body[data-admin-page]{background:radial-gradient(circle at 90% 8%,rgba(143,202,249,.16),transparent 25rem),#f3f7fc}
+.admin-sidebar{background:linear-gradient(175deg,#061d40,#092b5c 72%,#0d3b73);box-shadow:18px 0 42px rgba(5,31,70,.08)}
+.admin-sidebar a{transition:background .2s ease,color .2s ease,transform .2s ease}
+.admin-sidebar a:hover,.admin-sidebar a.active{background:linear-gradient(90deg,rgba(38,119,207,.34),rgba(20,72,129,.42));transform:translateX(3px)}
+.admin-brand{letter-spacing:-.03em}
+.admin-period,.admin-metric,.admin-chart-card{border-color:rgba(205,222,239,.95);box-shadow:var(--shadow-sm)}
+.admin-metric{position:relative;overflow:hidden;border-radius:19px;transition:transform .2s ease,box-shadow .2s ease}
+.admin-metric::after{position:absolute;right:-24px;bottom:-32px;width:82px;height:82px;border:15px solid rgba(14,110,217,.06);border-radius:50%;content:""}
+.admin-metric:hover{box-shadow:var(--shadow);transform:translateY(-3px)}
+.admin-chart-card{border-radius:21px}
+.admin-warning{border-color:#f3d18d;border-radius:14px;box-shadow:0 8px 22px rgba(122,83,17,.05)}
