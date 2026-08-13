@@ -1,2 +1,2 @@
 @import "./hotels.css";
-.restaurant-grid{grid-template-columns:minmax(220px,.7fr) minmax(150px,.3fr);max-width:600px}@media(max-width:540px){.restaurant-grid{grid-template-columns:1fr}}
+.restaurant-grid{grid-template-columns:minmax(220px,1.2fr) minmax(150px,.7fr) minmax(120px,.45fr);max-width:850px}@media(max-width:700px){.restaurant-grid{grid-template-columns:1fr 1fr}}@media(max-width:540px){.restaurant-grid{grid-template-columns:1fr}}

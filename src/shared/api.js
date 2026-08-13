@@ -3,6 +3,10 @@ const ACCESS_KEY = "journovo_access_token";
 const REFRESH_KEY = "journovo_refresh_token";
 const USER_KEY = "journovo_user";
 
+function emitRequestState(state, detail = {}) {
+  window.dispatchEvent(new CustomEvent("journovo:request-state", { detail: { state, ...detail } }));
+}
+
 export class ApiError extends Error {
   constructor(message, status = 0, errors = {}) { super(message); this.name = "ApiError"; this.status = status; this.errors = errors; }
 }
@@ -94,8 +98,15 @@ export async function request(path, { method = "GET", body, token = session.toke
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body && !form) headers["Content-Type"] = "application/json";
   let response;
+  emitRequestState("start", { path, method });
   try { response = await fetch(`${API_BASE_URL}${path}`, { method, headers, body: body ? (form ? body : JSON.stringify(body)) : undefined }); }
-  catch { throw new ApiError("Unable to reach the travel API. Check its URL and CORS settings."); }
+  catch {
+    const error = new ApiError(navigator.onLine
+      ? "The travel service is temporarily unavailable. Please try again in a moment."
+      : "You appear to be offline. Reconnect to the internet and try again.");
+    emitRequestState("end", { path, method, ok: false, error });
+    throw error;
+  }
   const payload = await response.json().catch(() => ({}));
   if (response.status === 401 && token) {
     session.clear();
@@ -103,8 +114,11 @@ export async function request(path, { method = "GET", body, token = session.toke
   }
   if (!response.ok) {
     const errors = validationErrors(payload);
-    throw new ApiError(firstValidationMessage(errors) || payload.message || "Request failed.", response.status, errors);
+    const error = new ApiError(firstValidationMessage(errors) || payload.message || "Request failed.", response.status, errors);
+    emitRequestState("end", { path, method, ok: false, error });
+    throw error;
   }
+  emitRequestState("end", { path, method, ok: true });
   return payload;
 }
 
@@ -112,14 +126,25 @@ export async function download(path, token = session.token()) {
   const headers = { Accept: "application/pdf", "ngrok-skip-browser-warning": "true" };
   if (token) headers.Authorization = `Bearer ${token}`;
   let response;
+  emitRequestState("start", { path, method: "GET" });
   try { response = await fetch(`${API_BASE_URL}${path}`, { headers }); }
-  catch { throw new ApiError("Unable to reach the travel API. Check its URL and CORS settings."); }
+  catch {
+    const error = new ApiError(navigator.onLine
+      ? "The report service is temporarily unavailable. Please try again in a moment."
+      : "You appear to be offline. Reconnect to the internet and try again.");
+    emitRequestState("end", { path, method: "GET", ok: false, error });
+    throw error;
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     const errors = validationErrors(payload);
-    throw new ApiError(firstValidationMessage(errors) || payload.message || "Report download failed.", response.status, errors);
+    const error = new ApiError(firstValidationMessage(errors) || payload.message || "Report download failed.", response.status, errors);
+    emitRequestState("end", { path, method: "GET", ok: false, error });
+    throw error;
   }
-  return { blob: await response.blob(), disposition: response.headers.get("Content-Disposition") || "" };
+  const result = { blob: await response.blob(), disposition: response.headers.get("Content-Disposition") || "" };
+  emitRequestState("end", { path, method: "GET", ok: true });
+  return result;
 }
 
 export const rows = payload => {
@@ -157,7 +182,7 @@ export const api = {
     details: id => request(`/hotels/details?hotel_id=${encodeURIComponent(id)}`, { token: null }),
     book: body => request("/hotels/bookings", { method: "POST", body })
   },
-  restaurants: { list: (city, page = 0) => request(`/restaurants?${query({ city, page })}`, { token: null }) },
+  restaurants: { list: (city, page = 0, min_rating = "") => request(`/restaurants?${query({ city, page, min_rating })}`, { token: null }) },
   flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
   trips: {
     list: () => request("/trips"),

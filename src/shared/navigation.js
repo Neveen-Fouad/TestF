@@ -9,6 +9,9 @@ const links = [
 ];
 const key = label => label.toLowerCase().replaceAll(" ", "-");
 let accessibilityObserver;
+let experienceReady = false;
+let submittedForm;
+let submittedAt = 0;
 
 function enhanceFormLabels(root = document) {
   root.querySelectorAll(".field > label:not([for])").forEach((label, index) => {
@@ -70,6 +73,154 @@ function enableAccessibilityEnhancements() {
   accessibilityObserver.observe(document.body, { childList: true, subtree: true });
 }
 
+function fieldMessage(control, message = "") {
+  const field = control.closest(".field") || control.parentElement;
+  if (!field) return;
+  field.classList.toggle("has-error", Boolean(message));
+  control.toggleAttribute("aria-invalid", Boolean(message));
+  let target = field.querySelector(".field-error");
+  if (message && !target) {
+    target = document.createElement("small");
+    target.className = "field-error";
+    target.setAttribute("role", "alert");
+    field.append(target);
+  }
+  if (target) {
+    target.textContent = message;
+    if (!message) target.remove();
+  }
+}
+
+function formMessage(form, message = "", error = false) {
+  let target = form.querySelector(".form-message");
+  if (message && !target) {
+    target = document.createElement("div");
+    target.className = "form-message";
+    target.setAttribute("aria-live", "polite");
+    form.prepend(target);
+  }
+  if (!target) return;
+  target.classList.toggle("error", error);
+  target.textContent = message;
+  if (!message) target.remove();
+}
+
+function showFormErrors(form, error) {
+  const entries = Object.entries(error?.errors || {});
+  if (!entries.length) return;
+  let first;
+  entries.forEach(([name, messages]) => {
+    const control = form.elements.namedItem(name);
+    if (!control || control instanceof RadioNodeList) return;
+    const message = Array.isArray(messages) ? messages[0] : String(messages);
+    fieldMessage(control, message);
+    first ||= control;
+  });
+  formMessage(form, "Please correct the highlighted fields and try again.", true);
+  first?.focus();
+}
+
+function setFormBusy(form, busy) {
+  const submit = form.querySelector('button[type="submit"], button:not([type])');
+  if (!submit) return;
+  if (busy) {
+    if (!submit.dataset.label) submit.dataset.label = submit.textContent.trim();
+    submit.disabled = true;
+    submit.classList.add("is-loading");
+    submit.setAttribute("aria-busy", "true");
+    submit.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Working…</span>';
+  } else {
+    submit.disabled = false;
+    submit.classList.remove("is-loading");
+    submit.removeAttribute("aria-busy");
+    if (submit.dataset.label) submit.textContent = submit.dataset.label;
+  }
+}
+
+function mountConnectionStatus() {
+  let banner = document.querySelector(".connection-status");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.className = "connection-status";
+    banner.setAttribute("role", "status");
+    banner.setAttribute("aria-live", "polite");
+    document.body.append(banner);
+  }
+  const render = () => {
+    const offline = !navigator.onLine;
+    banner.classList.toggle("visible", offline);
+    banner.textContent = offline ? "You’re offline. Some travel features will be unavailable until you reconnect." : "";
+  };
+  window.addEventListener("offline", render);
+  window.addEventListener("online", () => {
+    banner.classList.remove("visible");
+    notify("You’re back online. You can continue where you left off.");
+  });
+  render();
+}
+
+function enableExperienceEnhancements() {
+  if (experienceReady) return;
+  experienceReady = true;
+  mountConnectionStatus();
+
+  const main = document.querySelector("main");
+  if (main && !main.id) main.id = "main-content";
+  if (main && !document.querySelector(".skip-link")) {
+    const skip = document.createElement("a");
+    skip.className = "skip-link";
+    skip.href = `#${main.id}`;
+    skip.textContent = "Skip to main content";
+    document.body.prepend(skip);
+  }
+
+  document.addEventListener("invalid", event => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
+      fieldMessage(event.target, event.target.validationMessage);
+    }
+  }, true);
+
+  document.addEventListener("input", event => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
+      if (event.target.validity.valid) fieldMessage(event.target);
+    }
+  });
+
+  document.addEventListener("submit", event => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    form.querySelectorAll("[aria-invalid='true']").forEach(control => fieldMessage(control));
+    formMessage(form);
+    if (!form.checkValidity()) {
+      form.classList.add("was-validated");
+      const first = form.querySelector(":invalid");
+      setTimeout(() => first?.focus(), 0);
+      return;
+    }
+    submittedForm = form;
+    submittedAt = Date.now();
+  }, true);
+
+  window.addEventListener("journovo:request-state", event => {
+    const { state, ok, error } = event.detail || {};
+    const matchesSubmission = submittedForm && Date.now() - submittedAt < 3000;
+    if (state === "start" && matchesSubmission) {
+      const count = Number(submittedForm.dataset.pendingRequests || 0) + 1;
+      submittedForm.dataset.pendingRequests = String(count);
+      setFormBusy(submittedForm, true);
+      return;
+    }
+    if (state !== "end" || !submittedForm) return;
+    const count = Math.max(Number(submittedForm.dataset.pendingRequests || 1) - 1, 0);
+    submittedForm.dataset.pendingRequests = String(count);
+    if (!count) {
+      setFormBusy(submittedForm, false);
+      if (!ok) showFormErrors(submittedForm, error);
+      submittedForm = undefined;
+    }
+  });
+}
+
 function mountCollapsibleSidebar(host, content, label, id) {
   host.innerHTML = `<button class="sidebar-toggle button subtle" type="button" aria-controls="${id}" aria-expanded="false">${label}</button>${content.replace("<aside", `<aside id="${id}"`)}`;
   const toggle = host.querySelector(".sidebar-toggle");
@@ -94,6 +245,7 @@ function mountCollapsibleSidebar(host, content, label, id) {
 
 export function mountNavigation(active = "") {
   enableAccessibilityEnhancements();
+  enableExperienceEnhancements();
   const host = document.querySelector("[data-navigation]");
   if (!host) return;
 
@@ -264,6 +416,14 @@ export function notify(message, error = false) {
   stack.append(el);
   while (stack.children.length > 3) stack.firstElementChild.remove();
   setTimeout(remove, duration);
+}
+
+export function showRecoverableState(target, message, { actionLabel = "Try again", action } = {}) {
+  if (!target) return;
+  target.innerHTML = `<div class="empty is-error"><div><strong>We couldn’t complete that just now.</strong><p>${escapeHtml(message)}</p>${action ? `<button class="button subtle" type="button" data-retry>${escapeHtml(actionLabel)}</button>` : ""}</div></div>`;
+  target.querySelector("[data-retry]")?.addEventListener("click", action);
+  target.tabIndex = -1;
+  target.focus({ preventScroll: true });
 }
 
 export const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char => ({
