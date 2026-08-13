@@ -2,6 +2,9 @@ import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
 
 mountNavigation("home");
+document.querySelectorAll("[data-plan-destination]").forEach(button => button.addEventListener("click", () => {
+  location.assign(`/pages/planner.html?destination=${encodeURIComponent(button.dataset.planDestination)}`);
+}));
 const target = document.querySelector("#home-trips");
 try {
   const trips = rows(await api.trips.preMade());

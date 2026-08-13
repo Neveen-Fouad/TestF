@@ -1,9 +1,11 @@
 import { api } from "../shared/api.js";
 import { mountNavigation, notify, requireLogin } from "../shared/navigation.js";
+import { constrainDateRange } from "../shared/forms.js";
 
 mountNavigation("hotels");
 if (requireLogin()) {
   const form = document.querySelector("#booking-form");
+  constrainDateRange(form, "check_in_date", "check_out_date");
   form.elements.hotel_id.value = new URLSearchParams(location.search).get("id") || "";
   form.addEventListener("submit", async event => {
     event.preventDefault();

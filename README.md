@@ -16,15 +16,15 @@ No `npm install` or build command is required. The checked-in HTML, CSS, JavaScr
 
 ## API configuration
 
-Edit `config.js` to point the frontend at a different backend API:
+Local development automatically uses `http://127.0.0.1:8000/api`. A production deployment defaults to the same origin under `/api`, which works when the web server proxies `/api` to Laravel.
+
+When the backend is hosted on another origin, define its HTTPS URL before `config.js` loads:
 
 ```js
-window.JOURNOVO_CONFIG = Object.freeze({
-  API_BASE_URL: "http://127.0.0.1:8000/api"
-});
+window.JOURNOVO_API_BASE_URL = "https://api.example.com/api";
 ```
 
-The API client remains in `src/shared/api.js`. It preserves the existing endpoints, JSON and multipart request handling, authorization header, JWT storage, and response parsing.
+The API client remains in `src/shared/api.js`. It preserves the existing endpoints, JSON and multipart request handling, authorization header, JWT storage, and response parsing. Production must use HTTPS, and the Laravel CORS allowlist must include the deployed frontend origin.
 
 ## Key areas
 
@@ -99,10 +99,15 @@ The following frontend improvements from the Front Enhancement task have been im
 - Dynamic values in favorites, bookings, reviews, comparison results, and related error messages are HTML-escaped before rendering.
 - Hotel booking converts `guests` and `rooms` to numbers; flight booking converts `adults` to a number.
 - Administrators receive direct `Admin` and `Create trip` links in the main navigation.
-- Logged-in users can submit a review with a title, rating, comment, and optional image.
+- Logged-in users can start a contextual review from trip, hotel, flight, and restaurant results, with a rating, description, and optional image.
 - Notifications support per-item `Mark read` actions and a `Mark all read` action with an updated unread badge.
 - Compared hotels can be removed, and amenities render safely whether the API returns an array or a string.
 - Payment and notification pages use the shared client-ID resolver.
+- Validation errors support both the backend's `error` envelope and conventional `errors` envelopes.
+- Login return paths are restricted to the current frontend origin.
+- Date fields enforce future dates and valid date ranges before submission.
+- Form labels, toast announcements, focus indicators, mobile sidebars, and album type tabs have accessible behavior.
+- Flight detail links include enough search context to reload a shared or refreshed URL.
 
 Verification completed for this remediation:
 

@@ -1,15 +1,18 @@
 import { api, rows, session } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify } from "../shared/navigation.js";
+import { constrainDateRange } from "../shared/forms.js";
 
 mountNavigation("hotels");
 const target = document.querySelector("#hotels");
+const form = document.querySelector("#search");
 const count = document.querySelector("#compare-count");
 const selected = () => JSON.parse(sessionStorage.getItem("journovo_compare_hotels") || "[]");
 const hotelKey = hotel => String(hotel.id || hotel.hotel_id || hotel.property?.id || hotel.name || hotel.hotel_name || "");
 const save = hotels => { sessionStorage.setItem("journovo_compare_hotels", JSON.stringify(hotels)); count.textContent = String(hotels.length); };
 save(selected());
+constrainDateRange(form, "check_in", "check_out");
 
-document.querySelector("#search").addEventListener("submit", async event => {
+form.addEventListener("submit", async event => {
   event.preventDefault();
   target.innerHTML = '<div class="empty">Loading hotels…</div>';
   const filters = Object.fromEntries(new FormData(event.currentTarget));

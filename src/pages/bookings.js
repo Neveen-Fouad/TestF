@@ -7,14 +7,21 @@ if (requireLogin()) {
   const target = document.querySelector("#bookings");
   try {
     const bookings = rows(await api.dashboard.bookings());
-    target.innerHTML = bookings.length ? bookings.map(item => `
-      <article class="result-card">
+    target.innerHTML = bookings.length ? bookings.map(item => {
+      const details = item.details || {};
+      const type = item.type || item.booking_type || "booking";
+      const name = details.hotel_name || details.name || details.airline || item.provider_name || `${type} booking`;
+      const dates = type === "hotel"
+        ? [item.check_in_date, item.check_out_date].filter(Boolean).map(value => String(value).slice(0, 10)).join(" → ")
+        : String(item.booking_date || item.booked_at || item.created_at || "").slice(0, 10);
+      const total = item.total_price != null ? `${item.currency || "USD"} ${item.total_price}` : "Price unavailable";
+      return `<article class="result-card">
         <div class="eyebrow">${escapeHtml(item.status || "BOOKING")}</div>
-        <h3>${escapeHtml(item.hotel?.name || item.flight?.name || item.name || "Booking")}</h3>
-        <p>${escapeHtml(item.created_at || item.date || "")}</p>
-        <p>${escapeHtml(item.total || item.amount || "")}</p>
-      </article>
-    `).join("") : '<div class="empty">No bookings yet.</div>';
+        <h3>${escapeHtml(name)}</h3>
+        <p>${escapeHtml(dates)}</p>
+        <p>${escapeHtml(total)}</p>
+      </article>`;
+    }).join("") : '<div class="empty">No bookings yet.</div>';
   } catch (error) {
     target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
   }

@@ -7,6 +7,15 @@ export class ApiError extends Error {
   constructor(message, status = 0, errors = {}) { super(message); this.name = "ApiError"; this.status = status; this.errors = errors; }
 }
 
+function validationErrors(payload) {
+  const errors = payload?.errors || payload?.error || {};
+  return errors && typeof errors === "object" && !Array.isArray(errors) ? errors : {};
+}
+
+function firstValidationMessage(errors) {
+  return Object.values(errors).flat(Infinity).find(value => typeof value === "string" && value.trim());
+}
+
 export const session = {
   token: () => localStorage.getItem(ACCESS_KEY),
   refreshToken: () => localStorage.getItem(REFRESH_KEY),
@@ -93,8 +102,8 @@ export async function request(path, { method = "GET", body, token = session.toke
     window.dispatchEvent(new CustomEvent("journovo:unauthorized"));
   }
   if (!response.ok) {
-    const error = Object.values(payload.errors || {}).flat().find(Boolean);
-    throw new ApiError(error || payload.message || "Request failed.", response.status, payload.errors || {});
+    const errors = validationErrors(payload);
+    throw new ApiError(firstValidationMessage(errors) || payload.message || "Request failed.", response.status, errors);
   }
   return payload;
 }
@@ -107,7 +116,8 @@ export async function download(path, token = session.token()) {
   catch { throw new ApiError("Unable to reach the travel API. Check its URL and CORS settings."); }
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new ApiError(payload.message || "Report download failed.", response.status, payload.errors || {});
+    const errors = validationErrors(payload);
+    throw new ApiError(firstValidationMessage(errors) || payload.message || "Report download failed.", response.status, errors);
   }
   return { blob: await response.blob(), disposition: response.headers.get("Content-Disposition") || "" };
 }

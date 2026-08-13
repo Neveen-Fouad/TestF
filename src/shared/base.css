@@ -18,6 +18,8 @@ body { min-height: 100vh; margin: 0; background: var(--pale); }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .65; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #ffb37d; outline-offset: 3px; }
 
 .topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 28px; min-height: 78px; padding: 0 max(20px, 5vw); background: #fff; border-bottom: 1px solid var(--line); }
 .brand { font: 800 28px Georgia, serif; color: var(--navy); }
@@ -34,6 +36,9 @@ button { cursor: pointer; }
 .button:hover { filter: brightness(.96); transform: translateY(-1px); }
 .button.subtle { border: 1px solid var(--blue); background: #fff; box-shadow: none; color: var(--blue); }
 .menu-toggle { display: none; border: 0; background: transparent; font-size: 22px; }
+.mobile-nav-action { display: none; }
+.sidebar-toggle { display: none; width: 100%; margin-bottom: 12px; }
+.detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
 
 .page { max-width: 1180px; margin: auto; padding: 54px 24px; }
 .eyebrow { color: var(--warm); font-size: 12px; font-weight: 800; letter-spacing: .14em; }
@@ -80,7 +85,10 @@ button { cursor: pointer; }
   .topbar nav { position: absolute; top: 78px; right: 0; left: 0; display: none; flex-direction: column; gap: 0; padding: 12px 20px; border-bottom: 1px solid var(--line); background: #fff; }
   .topbar nav.open { display: flex; }
   .topbar nav a { padding: 12px; }
-  .nav-actions .profile-link { display: none; }
+  .nav-actions { display: none; }
+  .mobile-nav-action { display: flex; width: 100%; padding: 12px; border: 0; background: transparent; color: #476486; font-weight: 700; text-align: left; }
+  .sidebar-toggle { display: inline-flex; }
+  .sidebar:not(.open) { display: none; }
   .grid, .results { grid-template-columns: 1fr; }
   .split { grid-template-columns: 1fr; }
   .page { padding: 35px 18px; }

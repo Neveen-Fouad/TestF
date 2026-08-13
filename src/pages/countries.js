@@ -6,6 +6,7 @@ const form = document.querySelector("#explore-form");
 const countrySelect = document.querySelector("#country-select");
 const cityInput = document.querySelector("#explore-city");
 const target = document.querySelector("#attractions");
+document.querySelector("#attraction-map").setAttribute("role", "region");
 const map = window.L.map("attraction-map").setView([30.0444, 31.2357], 4);
 const markers = window.L.layerGroup().addTo(map);
 window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);

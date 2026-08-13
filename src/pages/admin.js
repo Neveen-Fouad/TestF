@@ -1,5 +1,6 @@
 import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountAdminSidebar, notify, requireAdmin } from "../shared/navigation.js";
+import { constrainDateRange } from "../shared/forms.js";
 
 const page = document.body.dataset.adminPage;
 if (requireAdmin()) { mountAdminSidebar(page); load(); }
@@ -21,7 +22,9 @@ async function load() {
       return;
     }
     if (page === "create-trip") {
-      document.querySelector("#trip-create-form").addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details.html?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
+      const createForm = document.querySelector("#trip-create-form");
+      constrainDateRange(createForm, "start_date", "end_date");
+      createForm.addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details.html?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
       return;
     }
     if (page === "interests") {
@@ -38,7 +41,7 @@ async function load() {
     }
     if (page === "reviews") {
       const reviews = rows(await api.admin.reviews());
-      target.innerHTML = cards(reviews, item => `<h3>${escapeHtml(item.title || "Review")}</h3><p>${escapeHtml(item.comment || item.content || "")}</p><button class="button" data-decision="approve" data-id="${escapeHtml(item.id)}">Approve</button> <button class="button subtle" data-decision="reject" data-id="${escapeHtml(item.id)}">Reject</button>`);
+      target.innerHTML = cards(reviews, item => `<h3>${escapeHtml(item.title || `${item.type || "Traveler"} review`)}</h3><p>${escapeHtml(item.description || item.comment || item.content || "No review text was provided.")}</p><button class="button" data-decision="approve" data-id="${escapeHtml(item.id)}">Approve</button> <button class="button subtle" data-decision="reject" data-id="${escapeHtml(item.id)}">Reject</button>`);
       target.querySelectorAll("[data-decision]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.reviewDecision(button.dataset.id, button.dataset.decision); button.closest("article").remove(); } catch (error) { notify(error.message, true); } }));
       return;
     }

@@ -14,12 +14,15 @@
       <h1>Traveler reviews</h1>
       <p class="lead">Share a useful note from your latest journey.</p>
     </header>
-    <form id="review-form" class="panel form" enctype="multipart/form-data">
-      <div class="form-grid">
-        <div class="field"><label>Review type</label><select name="type" required><option value="trip">Trip</option><option value="hotel">Hotel</option><option value="restaurant">Restaurant</option><option value="flight">Flight</option></select></div>
-        <div class="field"><label>Item ID</label><input name="reviewable_id" type="text" maxlength="500" required><small>Use the trip, hotel, restaurant, or flight ID shown in its details.</small></div>
-        <div class="field"><label>Rating</label><select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></div>
+    <div id="review-prompt" class="panel" hidden></div>
+    <form id="review-form" class="panel form" enctype="multipart/form-data" hidden>
+      <input name="type" type="hidden">
+      <input name="reviewable_id" type="hidden">
+      <div class="form-heading">
+        <p class="eyebrow">YOUR REVIEW</p>
+        <h2 id="review-context">Selected travel item</h2>
       </div>
+      <div class="field"><label>Rating</label><select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></div>
       <div class="field"><label>Review</label><textarea name="description" rows="5" required maxlength="2000"></textarea></div>
       <div class="field"><label>Photo (optional)</label><input name="image" type="file" accept="image/png,image/jpeg"></div>
       <button class="button">Submit review</button>

@@ -1,10 +1,16 @@
 import { api, session } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
+import { constrainFutureDate } from "../shared/forms.js";
 
 mountNavigation("plan-a-trip");
 document.querySelector(".planner-hero .eyebrow").textContent = "PERSONAL TRIP PLANNING";
 document.querySelector(".planner-hero h1 + p").textContent = "Share the essentials and Journovo will build a personalized itinerary. Administrators can use the separate manual trip creator.";
-if (requireLogin()) document.querySelector("#plan").addEventListener("submit", async event => {
+const plannerForm = document.querySelector("#plan");
+constrainFutureDate(plannerForm.elements.start_date);
+plannerForm.elements.budget.min = "100";
+const requestedDestination = new URLSearchParams(location.search).get("destination");
+if (requestedDestination) plannerForm.elements.destination.value = requestedDestination;
+if (requireLogin()) plannerForm.addEventListener("submit", async event => {
   event.preventDefault();
   const form = event.currentTarget;
   const button = form.querySelector("button");
