@@ -30,7 +30,7 @@ if (requireLogin()) {
     const conversations = rows(await api.joy.conversations());
     conversation = conversations[0];
     const detail = conversation ? await api.joy.show(conversation.id) : null;
-    const messages = rows(detail);
+    const messages = detail?.data?.messages || detail?.messages || rows(detail);
     chat.innerHTML = messages.map(message => messageMarkup(message.content || message.message || "", message.role)).join("") || messageMarkup("Hi, I'm Joy. Where are you dreaming of going next?");
   } catch (error) {
     chat.innerHTML = messageMarkup("Hi, I'm Joy. I couldn't load our earlier conversation, but you can still ask me a travel question.");
@@ -53,9 +53,9 @@ if (requireLogin()) {
     try {
       const result = await api.joy.send(message, conversation?.id);
       const reply = result.data || result;
-      conversation = reply.conversation || conversation;
+      conversation = reply.conversation || (reply.conversation_id ? { id: reply.conversation_id } : conversation);
       chat.querySelector(".message.pending")?.remove();
-      chat.insertAdjacentHTML("beforeend", messageMarkup(reply.message || reply.content || reply.reply || "I don't have a response yet. Please try again.", "assistant"));
+      chat.insertAdjacentHTML("beforeend", messageMarkup(reply.assistant_message?.content || reply.message || reply.content || reply.reply || "I don't have a response yet. Please try again.", "assistant"));
     } catch (error) {
       chat.querySelector(".message.pending")?.remove();
       const errorMessage = serviceMessage(error);
