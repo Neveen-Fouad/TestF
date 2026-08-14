@@ -1,1 +1,50 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Explore | Journovo</title><link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><link rel="stylesheet" href="/src/pages/countries.css"></head><body><div data-navigation></div><main class="page"><div class="eyebrow">EXPLORE</div><h1>Explore attractions by country</h1><p class="lead">Choose a country and city to see its attraction locations on the map.</p><form id="explore-form" class="panel toolbar"><div class="field"><label for="country-select">Country</label><select id="country-select" name="country" required><option value="">Loading countries…</option></select></div><div class="field"><label for="explore-city">City</label><input id="explore-city" name="city" required placeholder="Select a country or enter a city"></div><button class="button">Show attractions</button></form><div id="attraction-map" class="map" aria-label="Map of attraction locations"></div><div id="attractions" class="results"><div class="empty">Select a country to load attraction locations.</div></div></main><script src="/vendor/leaflet/leaflet.js"></script><script src="/config.js"></script><script type="module" src="/src/pages/countries.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Explore | Journovo</title>
+    <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="/src/pages/countries.css" />
+  </head>
+  <body>
+    <div data-navigation></div>
+    <main class="page">
+      <div class="eyebrow">EXPLORE</div>
+      <h1>Explore attractions by country</h1>
+      <p class="lead">
+        Choose a country and city to see its attraction locations on the map.
+      </p>
+      <form id="explore-form" class="panel toolbar">
+        <div class="field">
+          <label for="country-select">Country</label
+          ><select id="country-select" name="country" required>
+            <option value="">Loading countries…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="explore-city">City</label
+          ><input
+            id="explore-city"
+            name="city"
+            required
+            placeholder="Select a country or enter a city"
+          />
+        </div>
+        <button class="button">Show attractions</button>
+      </form>
+      <section id="weather" class="panel weather-panel" hidden></section>
+      <div
+        id="attraction-map"
+        class="map"
+        aria-label="Map of attraction locations"
+      ></div>
+      <div id="attractions" class="results">
+        <div class="empty">Select a country to load attraction locations.</div>
+      </div>
+    </main>
+    <script src="/vendor/leaflet/leaflet.js"></script>
+    <script src="/config.js"></script>
+    <script type="module" src="/src/pages/countries.js"></script>
+  </body>
+</html>

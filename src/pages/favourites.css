@@ -1,1 +1,13 @@
 @import "../shared/base.css";
+
+.fav-section { margin: 0 0 34px; }
+.fav-section h2 { margin: 0 0 14px; color: var(--navy); font-size: 22px; letter-spacing: -.01em; }
+.fav-card { display: flex; gap: 15px; align-items: flex-start; }
+.fav-card .fav-thumb { width: 88px; height: 88px; flex: 0 0 88px; object-fit: cover; border-radius: 12px; border: 1px solid #dcebf7; }
+.fav-card > div { min-width: 0; flex: 1; }
+.fav-card .eyebrow { margin: 0 0 4px; }
+.fav-card h3 { margin: 0 0 4px; font-size: 18px; line-height: 1.25; }
+.fav-card p { margin: 4px 0; }
+.fav-meta { color: #5b7d9f !important; font-size: 13px; font-weight: 650; }
+.fav-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.fav-actions .button { margin-top: 0; }

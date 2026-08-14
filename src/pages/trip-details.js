@@ -25,7 +25,9 @@ async function loadTrip() {
     const tripPayload = await api.trips.show(id);
     trip = tripPayload?.data || tripPayload;
     renderTrip();
-    await loadItinerary();
+    const tripDetails = rows(trip?.details);
+    if (tripDetails.length) renderDays(tripDetails);
+    else await loadItinerary();
   } catch (error) {
     tripTarget.innerHTML = `<div class="empty is-error">${escapeHtml(error.message)}</div>`;
     daysTarget.innerHTML = "";
@@ -53,11 +55,12 @@ function renderDay(day, index) {
   const dayNumber = Number(day.day) || index + 1;
   const plan = normalizePlan(day.plan);
   const moments = itineraryMoments(plan);
+  const facts = itineraryFacts(plan);
   const notes = itineraryNotes(plan);
   const date = dateForDay(dayNumber);
   const cost = day.expenses != null && day.expenses !== "" ? `$${Number(day.expenses).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "Flexible spend";
   const timeline = moments.length
-    ? `<div class="itinerary-moments">${moments.map(({ label, value, icon }) => `<section class="itinerary-moment"><span class="moment-icon" aria-hidden="true">${icon}</span><div><p>${escapeHtml(label)}</p><div>${formatPlanValue(value)}</div></div></section>`).join("")}</div>`
+    ? `<ol class="itinerary-timeline">${moments.map(({ label, value, icon }) => `<li class="itinerary-moment"><span class="moment-icon" aria-hidden="true">${icon}</span><div><p>${escapeHtml(label)}</p><div>${formatPlanValue(value)}</div></div></li>`).join("")}</ol>`
     : `<div class="itinerary-free"><span aria-hidden="true">✦</span><p>${escapeHtml(planText(plan) || "A flexible day to explore at your own pace.")}</p></div>`;
   return `<article class="itinerary-day">
     <header class="itinerary-day-header">
@@ -65,6 +68,7 @@ function renderDay(day, index) {
       <div class="itinerary-day-title"><p class="eyebrow">${escapeHtml(date || "Your journey")}</p><h3>${escapeHtml(day.title || plan.day_title || `A day in ${trip?.destination || "your destination"}`)}</h3></div>
       <p class="itinerary-cost"><span>Estimated</span><strong>${escapeHtml(cost)}</strong></p>
     </header>
+    ${facts.length ? `<dl class="itinerary-facts">${facts.map(({ label, value }) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>` : ""}
     ${timeline}
     ${notes.length ? `<footer class="itinerary-notes"><span aria-hidden="true">⌁</span><p>${notes.map(escapeHtml).join("<br>")}</p></footer>` : ""}
   </article>`;
@@ -82,11 +86,18 @@ function itineraryMoments(plan) {
     ["afternoon", "Afternoon", "◒"], ["evening", "Evening", "◑"], ["dinner", "Dinner", "☾"], ["night", "Night", "✦"],
     ["activities", "Highlights", "✦"], ["plan", "Plan", "✦"]
   ];
-  const listed = definitions.map(([key, label, icon]) => ({ label, icon, value: plan[key] })).filter(item => meaningful(item.value));
-  if (listed.length) return listed;
-  return Object.entries(plan)
-    .filter(([key, value]) => !["day", "day_title", "title", "hotel", "weather_note", "route_notes", "summary"].includes(key) && meaningful(value))
-    .map(([key, value]) => ({ label: key.replace(/_/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()), value, icon: "✦" }));
+  return definitions.map(([key, label, icon]) => ({ label, icon, value: plan[key] })).filter(item => meaningful(item.value));
+}
+
+function itineraryFacts(plan) {
+  const hotel = plan.hotel_name || plan.hotel;
+  return [
+    ["Weather", plan.weather_temperature],
+    ["Hotel", hotel],
+    ["Hotel per night", formatCurrency(plan.hotel_per_night)],
+    ["Activities & meals / person", formatCurrency(plan.activities_and_meals_cost_per_person)],
+    ["Daily estimate", formatCurrency(plan.daily_cost)]
+  ].map(([label, value]) => ({ label, value })).filter(item => meaningful(item.value));
 }
 
 function itineraryNotes(plan) {
@@ -103,6 +114,12 @@ function meaningful(value) {
 function formatPlanValue(value) {
   if (Array.isArray(value)) return `<ul>${value.map(item => `<li>${escapeHtml(planText(item))}</li>`).join("")}</ul>`;
   return `<p>${escapeHtml(planText(value))}</p>`;
+}
+
+function formatCurrency(value) {
+  if (value == null || value === "") return "";
+  const amount = Number(value);
+  return Number.isFinite(amount) ? `$${amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : planText(value);
 }
 
 function planText(value) {

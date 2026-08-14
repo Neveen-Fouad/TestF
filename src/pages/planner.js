@@ -24,8 +24,9 @@ if (requireLogin()) plannerForm.addEventListener("submit", async event => {
     const response = await api.trips.create(values, true);
     const trip = response?.data || response;
     const id = trip?.id || trip?.trip?.id;
-    document.querySelector("#plan-result").innerHTML = `<section class="plan-success"><span>✦</span><div><p class="eyebrow">TRIP CREATED</p><h2>${escapeHtml(trip?.destination || values.destination)}</h2><p>${escapeHtml(response?.message || "The trip has been created.")}</p></div>${id ? `<a class="button subtle" href="/pages/trip-details.html?id=${encodeURIComponent(id)}">Open itinerary</a>` : ""}</section>`;
+    if (!id) throw new Error("The trip was created, but its itinerary reference was not returned.");
     notify("Trip created.");
+    location.assign(`/pages/trip-details?id=${encodeURIComponent(id)}`);
   } catch (error) {
     document.querySelector("#plan-result").innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
     notify(error.message, true);

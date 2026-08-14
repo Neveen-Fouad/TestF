@@ -1,1 +1,56 @@
 @import "../shared/base.css";
+
+.weather-panel {
+  margin-bottom: 18px;
+}
+.weather-panel[hidden] {
+  display: none;
+}
+.weather-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.weather-now h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 21px;
+}
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.weather-current strong {
+  color: var(--navy);
+  font-size: 30px;
+}
+.weather-current span {
+  color: var(--muted);
+  font-weight: 600;
+}
+.weather-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #dcebf7;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  grid-column: 1 / -1;
+  padding: 6px 2px 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}

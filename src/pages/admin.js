@@ -25,7 +25,7 @@ async function load() {
     if (page === "create-trip") {
       const createForm = document.querySelector("#trip-create-form");
       constrainFutureDate(createForm.elements.start_date);
-      createForm.addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details.html?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
+      createForm.addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
       return;
     }
     if (page === "legacy-interests") {

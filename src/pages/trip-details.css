@@ -22,9 +22,13 @@
 .itinerary-cost { display: grid; gap: 2px; margin: 0; text-align: right; }
 .itinerary-cost span { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 .itinerary-cost strong { color: var(--ink); font-size: 14px; }
-.itinerary-moments { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 7px 25px 12px 97px; }
-.itinerary-moment { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 11px; min-height: 94px; padding: 17px 17px 15px 0; border-bottom: 1px solid #e6eef7; }
-.itinerary-moment:nth-last-child(-n+2) { border-bottom: 0; }
+.itinerary-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 25px 8px 97px; }
+.itinerary-facts div { display: flex; align-items: baseline; gap: 6px; padding: 7px 10px; border: 1px solid #dceaf7; border-radius: 9px; background: #f8fcff; }
+.itinerary-facts dt { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.itinerary-facts dd { margin: 0; color: var(--navy); font-size: 12px; font-weight: 750; }
+.itinerary-timeline { display: grid; gap: 0; margin: 8px 25px 16px 97px; padding: 0; list-style: none; }
+.itinerary-moment { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; min-height: 78px; padding: 15px 0; border-bottom: 1px solid #e6eef7; }
+.itinerary-moment:last-child { border-bottom: 0; }
 .moment-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; background: var(--sky); color: var(--blue); font-size: 14px; }
 .itinerary-moment p { margin: 1px 0 5px; color: var(--navy); font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 .itinerary-moment div > p { margin: 0; color: var(--muted); font-size: 14px; font-weight: 500; letter-spacing: 0; line-height: 1.55; text-transform: none; }
@@ -37,15 +41,13 @@
 .itinerary-notes p { margin: 0; }
 
 @media (max-width: 780px) {
-  .form-grid, .itinerary-moments { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
   .panel-heading, .itinerary-heading { align-items: flex-start; flex-direction: column; }
   .itinerary-day-header { grid-template-columns: 58px minmax(0, 1fr); padding: 19px 18px; }
   .itinerary-cost { grid-column: 2; text-align: left; }
   #days::before { left: 28px; }
   .itinerary-day-number { width: 48px; height: 48px; }
-  .itinerary-moments { padding: 7px 18px 12px 76px; }
-  .itinerary-moment, .itinerary-moment:nth-last-child(-n+2) { border-bottom: 1px solid #e6eef7; }
-  .itinerary-moment:last-child { border-bottom: 0; }
+  .itinerary-facts, .itinerary-timeline { margin-right: 18px; margin-left: 76px; }
   .itinerary-free { padding-left: 76px; }
   .itinerary-notes { margin: 0 18px 18px 76px; }
 }
@@ -53,7 +55,7 @@
 @media (max-width: 480px) {
   .itinerary-day-header { gap: 12px; }
   .itinerary-day-title h3 { font-size: 21px; }
-  .itinerary-moments { padding-left: 18px; }
+  .itinerary-facts, .itinerary-timeline { margin-left: 18px; }
   .itinerary-free, .itinerary-notes { margin-left: 18px; padding-left: 14px; }
   #days::before { display: none; }
 }

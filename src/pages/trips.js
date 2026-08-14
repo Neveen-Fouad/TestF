@@ -22,7 +22,7 @@ try {
     const id = trip.id;
     const action = memberView
       ? id
-        ? `<a class="button subtle" href="/pages/trip-details.html?id=${encodeURIComponent(id)}">View itinerary</a>`
+        ? `<a class="button subtle" href="/pages/trip-details?id=${encodeURIComponent(id)}">View itinerary</a>`
         : '<span class="muted">This trip is missing its itinerary reference.</span>'
       : session.isLoggedIn() && id
         ? `<button class="button" type="button" data-book-trip="${escapeHtml(id)}">Add to my trips</button>`
