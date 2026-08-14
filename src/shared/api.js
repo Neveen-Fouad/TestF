@@ -169,25 +169,25 @@ export const api = {
     logout: () => request("/auth/logout", { method: "POST" }),
     forgot: email => request("/auth/forgot-password", { method: "POST", body: { email }, token: null }),
     reset: body => request("/auth/reset-password", { method: "POST", body, token: null }),
-    verifyEmail: (id, hash, parameters = "") => request(`/auth/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}${parameters ? \`?\${parameters}\` : ""}`, { token: null }),
+    verifyEmail: (id, hash, parameters = "") => request(`/auth/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}${parameters ? `?${parameters}` : ""}`, { token: null }),
     resendVerification: () => request("/auth/email/verification-notification", { method: "POST" })
   },
   explore: {
     countries: () => request("/countries", { token: null }),
     country: name => request(`/countries/${encodeURIComponent(name)}`, { token: null }),
     interests: () => request("/interests", { token: null }),
-    destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? \`&country_code=\${encodeURIComponent(code)}\` : ""}`, { token: null })
+    destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? `&country_code=${encodeURIComponent(code)}` : ""}`, { token: null })
   },
   hotels: {
-    search: filters => request(`/hotels/search?\${query(filters)}`, { token: null }),
+    search: filters => request(`/hotels/search?${query(filters)}`, { token: null }),
     details: id => request(`/hotels/details?hotel_id=${encodeURIComponent(id)}`, { token: null }),
     book: body => request("/hotels/bookings", { method: "POST", body })
   },
   restaurants: {
-    list: (city, page = 0, min_rating = "") => request(`/restaurants?\${query({ city, page, min_rating })}`, { token: null }),
+    list: (city, page = 0, min_rating = "") => request(`/restaurants?${query({ city, page, min_rating })}`, { token: null }),
     details: id => request(`/restaurants/details?id=${encodeURIComponent(id)}`, { token: null })
   },
-  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?\${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
+  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
   trips: {
     list: () => request("/trips"),
     preMade: () => request("/trips/pre-made", { token: null }),
@@ -212,7 +212,7 @@ export const api = {
   interests: { mine: () => request("/client/interests"), update: interests => request("/client/interests", { method: "PUT", body: { interests } }) },
   profile: { get: () => request("/profile"), update: body => request("/profile", { method: "PATCH", body }), password: body => request("/profile/password", { method: "PATCH", body }) },
   reviews: {
-    list: (filters = {}) => request(`/reviews?\${query(filters)}`),
+    list: (filters = {}) => request(`/reviews?${query(filters)}`),
     mine: () => request("/reviews/my"),
     create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData }),
     update: (id, form) => request(`/reviews/${encodeURIComponent(id)}`, { method: "POST", body: form, form: form instanceof FormData }),
@@ -239,8 +239,8 @@ export const api = {
     updateSettings: (id, form) => { form.set("_method", "PATCH"); return request(`/admin/settings/${id}`, { method: "POST", body: form, form: true }); },
     statistics: () => request("/admin/statistics"),
     tripStatistics: () => request("/admin/trips/statistics"),
-    dashboardStatistics: (filters = {}) => request(`/admin/dashboard/statistics?\${query(filters)}`),
-    exportDashboardPdf: (filters = {}) => download(`/admin/dashboard/export-pdf?\${query(filters)}`),
+    dashboardStatistics: (filters = {}) => request(`/admin/dashboard/statistics?${query(filters)}`),
+    exportDashboardPdf: (filters = {}) => download(`/admin/dashboard/export-pdf?${query(filters)}`),
     revenue: () => request("/revenue/total"),
     message: id => request(`/admin/contact-messages/${encodeURIComponent(id)}`),
     removeMessage: id => request(`/admin/contact-messages/${encodeURIComponent(id)}`, { method: "DELETE" }),
