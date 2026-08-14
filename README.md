@@ -59,6 +59,7 @@ The API client remains in `src/shared/api.js`. It preserves the existing endpoin
 | 29 | Interests / Preferences | `/pages/interests.html` | Select and save travel interests |
 | 30 | Settings | `/pages/settings.html` | Update account and travel profile settings |
 | 31 | Admin Dashboard | `/pages/admin.html` | Revenue, trip, and user statistics with charts and PDF export |
+| — | Live Travel Inventory | `/pages/admin-inventory.html` | Automatically combines live hotel, restaurant, and flight results for configured cities and routes; no admin filters |
 | 32 | Manage Users | `/pages/admin-users.html` | View users and update account status |
 | 33 | Create a Trip (Manual) | `/pages/admin-create-trip.html` | Admin-only manual trip creation |
 | 34 | Manage Interests | `/pages/admin-interests.html` | Create and remove interest options |

@@ -8,4 +8,5 @@
 .search-form .button{min-width:155px}
 .panel-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:34px 0 18px}
 .panel-heading h2{margin:0;color:var(--navy);font:700 27px Georgia,serif}
+.favourite-button{color:#b33b49}.favourite-button:hover{border-color:#e9aab0;background:#fff5f6;color:#9f2635}.favourite-button.is-favourited{border-color:#efb3b9;background:#fff0f2;color:#a32737}
 @media(max-width:540px){.search-page::before{display:none}.search-form{padding:21px}.panel-heading{align-items:flex-start;flex-direction:column}.panel-heading .button{width:100%}}

@@ -5,7 +5,9 @@ const links = [
   ["Explore", "/pages/countries.html"],
   ["Hotels", "/pages/hotels.html"],
   ["Restaurants", "/pages/restaurants.html"],
-  ["Flights", "/pages/flights.html"]
+  ["Flights", "/pages/flights.html"],
+  ["About", "/pages/about.html"],
+  ["Contact", "/pages/contact.html"]
 ];
 const key = label => label.toLowerCase().replaceAll(" ", "-");
 let accessibilityObserver;
@@ -365,6 +367,7 @@ export function mountAdminSidebar(active = "") {
   if (!host) return;
   const sidebarLinks = [
     ["Dashboard", "/pages/admin.html"],
+    ["Live inventory", "/pages/admin-inventory.html"],
     ["Users", "/pages/admin-users.html"],
     ["Bookings", "/pages/admin-bookings.html"],
     ["Trips", "/pages/admin-trips.html"],
