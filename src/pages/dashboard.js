@@ -15,6 +15,6 @@ if (requireLogin()) {
   const tripsTarget = document.querySelector("#dashboard-trips");
   if (tripsResult.status === "fulfilled") {
     const trips = rows(tripsResult.value).slice(0, 3);
-    tripsTarget.innerHTML = trips.length ? trips.map(trip => `<a class="dashboard-trip" href="/pages/trip-details.html?id=${encodeURIComponent(trip.id)}"><span class="trip-dot">✦</span><span><b>${escapeHtml(trip.destination || trip.name || "Your journey")}</b><small>${escapeHtml(trip.start_date || trip.end_date || trip.style || "Open itinerary")}</small></span><i>→</i></a>`).join("") : '<p class="muted">No journeys yet. Your first plan starts with a destination.</p>';
+    tripsTarget.innerHTML = trips.length ? trips.map(trip => `<a class="dashboard-trip" href="/pages/trip-details.html?id=${encodeURIComponent(trip.id)}"><span class="trip-dot">✦</span><span><b>${escapeHtml(trip.destination || trip.name || "Your journey")}</b><small>${escapeHtml(trip.start_date || trip.end_date || trip.style || "Open itinerary")} · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")}</small></span><i>→</i></a>`).join("") : '<p class="muted">No journeys yet. Your first plan starts with a destination.</p>';
   } else tripsTarget.innerHTML = '<p class="muted">Your trips are unavailable right now.</p>';
 }

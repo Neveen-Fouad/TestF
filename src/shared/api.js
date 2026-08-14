@@ -1,4 +1,5 @@
-const API_BASE_URL = (window.JOURNOVO_CONFIG?.API_BASE_URL || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+const defaultApiUrl = `http://${location.hostname}:8000/api`;
+const API_BASE_URL = (window.JOURNOVO_CONFIG?.API_BASE_URL || defaultApiUrl).replace(/\/$/, "");
 const ACCESS_KEY = "journovo_access_token";
 const REFRESH_KEY = "journovo_refresh_token";
 const USER_KEY = "journovo_user";
@@ -149,7 +150,7 @@ export async function download(path, token = session.token()) {
 
 export const rows = payload => {
   const queue = [payload];
-  const keys = ["data", "results", "hotels", "properties", "trips", "details", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories", "interests"];
+  const keys = ["data", "results", "hotels", "propertySearch", "properties", "trips", "details", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories", "interests"];
   while (queue.length) {
     const value = queue.shift();
     if (Array.isArray(value)) return value;
@@ -168,22 +169,25 @@ export const api = {
     logout: () => request("/auth/logout", { method: "POST" }),
     forgot: email => request("/auth/forgot-password", { method: "POST", body: { email }, token: null }),
     reset: body => request("/auth/reset-password", { method: "POST", body, token: null }),
-    verifyEmail: (id, hash, parameters = "") => request(`/auth/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}${parameters ? `?${parameters}` : ""}`, { token: null }),
+    verifyEmail: (id, hash, parameters = "") => request(`/auth/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}${parameters ? \`?\${parameters}\` : ""}`, { token: null }),
     resendVerification: () => request("/auth/email/verification-notification", { method: "POST" })
   },
   explore: {
     countries: () => request("/countries", { token: null }),
     country: name => request(`/countries/${encodeURIComponent(name)}`, { token: null }),
     interests: () => request("/interests", { token: null }),
-    destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? `&country_code=${encodeURIComponent(code)}` : ""}`, { token: null })
+    destination: (city, code = "") => request(`/destination-data?city=${encodeURIComponent(city)}${code ? \`&country_code=\${encodeURIComponent(code)}\` : ""}`, { token: null })
   },
   hotels: {
-    search: filters => request(`/hotels/search?${query(filters)}`, { token: null }),
+    search: filters => request(`/hotels/search?\${query(filters)}`, { token: null }),
     details: id => request(`/hotels/details?hotel_id=${encodeURIComponent(id)}`, { token: null }),
     book: body => request("/hotels/bookings", { method: "POST", body })
   },
-  restaurants: { list: (city, page = 0, min_rating = "") => request(`/restaurants?${query({ city, page, min_rating })}`, { token: null }) },
-  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
+  restaurants: {
+    list: (city, page = 0, min_rating = "") => request(`/restaurants?\${query({ city, page, min_rating })}`, { token: null }),
+    details: id => request(`/restaurants/details?id=${encodeURIComponent(id)}`, { token: null })
+  },
+  flights: { airports: value => request(`/flights/search-airport?query=${encodeURIComponent(value)}`, { token: null }), search: filters => request(`/flights/search?\${query(filters)}`, { token: null }), book: body => request("/flights/book", { method: "POST", body }) },
   trips: {
     list: () => request("/trips"),
     preMade: () => request("/trips/pre-made", { token: null }),
@@ -191,7 +195,8 @@ export const api = {
     show: id => request(`/trips/${encodeURIComponent(id)}`),
     days: id => request(`/trips/${encodeURIComponent(id)}/tripDays`),
     update: (id, body) => request(`/trips/${encodeURIComponent(id)}`, { method: "PUT", body }),
-    remove: id => request(`/trips/${encodeURIComponent(id)}`, { method: "DELETE" })
+    remove: id => request(`/trips/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    book: id => request(`/trips/${encodeURIComponent(id)}/book`, { method: "POST" })
   },
   memories: { list: tripId => request(`/trips/${tripId}/memories`), create: (tripId, form) => request(`/trips/${tripId}/memories`, { method: "POST", body: form, form: true }), remove: (tripId, memoryId) => request(`/trips/${tripId}/memories/${memoryId}`, { method: "DELETE" }) },
   favourites: { list: () => request("/favourites"), add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }), remove: id => request(`/favourites/${id}`, { method: "DELETE" }) },
@@ -207,7 +212,7 @@ export const api = {
   interests: { mine: () => request("/client/interests"), update: interests => request("/client/interests", { method: "PUT", body: { interests } }) },
   profile: { get: () => request("/profile"), update: body => request("/profile", { method: "PATCH", body }), password: body => request("/profile/password", { method: "PATCH", body }) },
   reviews: {
-    list: (filters = {}) => request(`/reviews?${query(filters)}`),
+    list: (filters = {}) => request(`/reviews?\${query(filters)}`),
     mine: () => request("/reviews/my"),
     create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData }),
     update: (id, form) => request(`/reviews/${encodeURIComponent(id)}`, { method: "POST", body: form, form: form instanceof FormData }),
@@ -227,14 +232,22 @@ export const api = {
     messageStatus: (id, status) => request(`/admin/contact-messages/${id}/status`, { method: "PATCH", body: { status } }),
     interests: () => request("/admin/interests"),
     createInterest: body => request("/admin/interests", { method: "POST", body }),
+    updateInterest: (id, body) => request(`/admin/interests/${encodeURIComponent(id)}`, { method: "PUT", body }),
     removeInterest: id => request(`/admin/interests/${id}`, { method: "DELETE" }),
     settings: () => request("/admin/settings"),
     createSettings: form => request("/admin/settings", { method: "POST", body: form, form: true }),
     updateSettings: (id, form) => { form.set("_method", "PATCH"); return request(`/admin/settings/${id}`, { method: "POST", body: form, form: true }); },
     statistics: () => request("/admin/statistics"),
     tripStatistics: () => request("/admin/trips/statistics"),
-    dashboardStatistics: (filters = {}) => request(`/admin/dashboard/statistics?${query(filters)}`),
-    exportDashboardPdf: (filters = {}) => download(`/admin/dashboard/export-pdf?${query(filters)}`),
-    revenue: () => request("/revenue/total")
+    dashboardStatistics: (filters = {}) => request(`/admin/dashboard/statistics?\${query(filters)}`),
+    exportDashboardPdf: (filters = {}) => download(`/admin/dashboard/export-pdf?\${query(filters)}`),
+    revenue: () => request("/revenue/total"),
+    message: id => request(`/admin/contact-messages/${encodeURIComponent(id)}`),
+    removeMessage: id => request(`/admin/contact-messages/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    bookings: {
+      all: clientId => request(`/admin/bookings/${encodeURIComponent(clientId)}`),
+      hotels: clientId => request(`/admin/bookings/${encodeURIComponent(clientId)}/hotels`),
+      flights: clientId => request(`/admin/bookings/${encodeURIComponent(clientId)}/flights`)
+    }
   }
 };

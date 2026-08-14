@@ -336,6 +336,7 @@ export function mountSidebar(active = "") {
   const sidebarLinks = [
     ["Dashboard", "/pages/dashboard.html"],
     ["My trips", "/pages/trips.html"],
+    ["Discover journeys", "/pages/trips.html?catalog=1"],
     ["Trip album", "/pages/album.html"],
     ["Favorites", "/pages/favourites.html"],
     ["Compare", "/pages/compare.html"],
@@ -365,6 +366,7 @@ export function mountAdminSidebar(active = "") {
   const sidebarLinks = [
     ["Dashboard", "/pages/admin.html"],
     ["Users", "/pages/admin-users.html"],
+    ["Bookings", "/pages/admin-bookings.html"],
     ["Trips", "/pages/admin-trips.html"],
     ["Create trip", "/pages/admin-create-trip.html"],
     ["Interests", "/pages/admin-interests.html"],

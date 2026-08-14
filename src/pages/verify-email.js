@@ -1,7 +1,5 @@
 import { api, session } from "../shared/api.js";
-import { mountNavigation, notify } from "../shared/navigation.js";
-
-mountNavigation();
+import { notify } from "../shared/navigation.js";
 const params = new URLSearchParams(location.search); const message = document.querySelector("#verification-message"); const resend = document.querySelector("#resend");
 const id = params.get("id"); const hash = params.get("hash");
 if (id && hash) {

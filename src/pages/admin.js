@@ -1,6 +1,6 @@
 import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountAdminSidebar, notify, requireAdmin } from "../shared/navigation.js";
-import { constrainDateRange } from "../shared/forms.js";
+import { constrainFutureDate } from "../shared/forms.js";
 
 const page = document.body.dataset.adminPage;
 if (requireAdmin()) { mountAdminSidebar(page); load(); }
@@ -10,6 +10,7 @@ async function load() {
   try {
     if (page === "dashboard") { await loadDashboard(target); return; }
     if (page === "revenue") { const payload = await api.admin.revenue(); target.innerHTML = stats(payload?.data || payload); return; }
+    if (page === "bookings") { await loadAdminBookings(target); return; }
     if (page === "trips") {
       const trips = rows(await api.trips.list());
       target.innerHTML = trips.length ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th></tr></thead><tbody>${trips.map(trip => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No trips were returned.</div>';
@@ -23,22 +24,24 @@ async function load() {
     }
     if (page === "create-trip") {
       const createForm = document.querySelector("#trip-create-form");
-      constrainDateRange(createForm, "start_date", "end_date");
+      constrainFutureDate(createForm.elements.start_date);
       createForm.addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details.html?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
       return;
     }
-    if (page === "interests") {
+    if (page === "legacy-interests") {
       const render = async () => { const interests = rows(await api.admin.interests()); target.innerHTML = interests.map(item => `<article class="result-card"><h3>${escapeHtml(item.name || item.title)}</h3><button class="button subtle" data-remove="${escapeHtml(item.id)}">Delete</button></article>`).join("") || '<div class="empty">No interests yet.</div>'; target.querySelectorAll("[data-remove]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.removeInterest(button.dataset.remove); render(); } catch (error) { notify(error.message, true); } })); };
       await render();
       document.querySelector("#interest-form").addEventListener("submit", async event => { event.preventDefault(); try { await api.admin.createInterest(Object.fromEntries(new FormData(event.currentTarget))); event.currentTarget.reset(); render(); } catch (error) { notify(error.message, true); } });
       return;
     }
-    if (page === "complaints") {
+    if (page === "interests") { await loadInterests(target); return; }
+    if (page === "legacy-complaints") {
       const messages = rows(await api.admin.messages());
       target.innerHTML = cards(messages, item => `<p class="eyebrow">${escapeHtml(item.status || "PENDING")}</p><h3>${escapeHtml(item.title || "Complaint")}</h3><p>${escapeHtml(item.description || "")}</p><p>${escapeHtml(item.email || "")} · ${escapeHtml(item.phone || "")}</p><button class="button subtle" data-reply="${escapeHtml(item.id)}">Mark replied</button>`);
       target.querySelectorAll("[data-reply]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.messageStatus(button.dataset.reply, "replied"); button.closest("article").remove(); } catch (error) { notify(error.message, true); } }));
       return;
     }
+    if (page === "complaints") { await loadComplaints(target); return; }
     if (page === "reviews") {
       const reviews = rows(await api.admin.reviews());
       target.innerHTML = cards(reviews, item => `<h3>${escapeHtml(item.title || `${item.type || "Traveler"} review`)}</h3><p>${escapeHtml(item.description || item.comment || item.content || "No review text was provided.")}</p><button class="button" data-decision="approve" data-id="${escapeHtml(item.id)}">Approve</button> <button class="button subtle" data-decision="reject" data-id="${escapeHtml(item.id)}">Reject</button>`);
@@ -152,3 +155,62 @@ function compact(value) { return number(value).toLocaleString(undefined, { notat
 function dateRange(trip) { const start = String(trip.start_date || "").slice(0, 10); const end = String(trip.end_date || "").slice(0, 10); return start && end ? `${start} – ${end}` : start || end || "—"; }
 function stats(values) { return Object.entries(values || {}).map(([key, value]) => `<article class="result-card"><p class="eyebrow">${escapeHtml(key.replaceAll("_", " ").toUpperCase())}</p><h2>${escapeHtml(typeof value === "object" ? JSON.stringify(value) : value)}</h2></article>`).join("") || '<div class="empty">No statistics were returned.</div>'; }
 function cards(items, content) { return items.length ? items.map(item => `<article class="result-card">${content(item)}</article>`).join("") : '<div class="empty">No records returned.</div>'; }
+
+async function loadInterests(target) {
+  const form = document.querySelector("#interest-form");
+  const render = async () => {
+    const interests = rows(await api.admin.interests());
+    target.innerHTML = interests.length ? interests.map(item => `<article class="result-card"><h3>${escapeHtml(item.name || item.title)}</h3><div class="detail-actions"><button class="button subtle" data-edit-interest="${escapeHtml(item.id)}" data-interest-name="${escapeHtml(item.name || "")}">Edit</button><button class="button subtle" data-remove-interest="${escapeHtml(item.id)}">Delete</button></div></article>`).join("") : '<div class="empty">No interests yet.</div>';
+    target.querySelectorAll("[data-edit-interest]").forEach(button => button.addEventListener("click", async () => {
+      const name = prompt("Interest name", button.dataset.interestName);
+      if (!name?.trim()) return;
+      try { await api.admin.updateInterest(button.dataset.editInterest, { name: name.trim() }); await render(); notify("Interest updated."); } catch (error) { notify(error.message, true); }
+    }));
+    target.querySelectorAll("[data-remove-interest]").forEach(button => button.addEventListener("click", async () => {
+      if (!confirm("Delete this interest?")) return;
+      try { await api.admin.removeInterest(button.dataset.removeInterest); await render(); notify("Interest deleted."); } catch (error) { notify(error.message, true); }
+    }));
+  };
+  if (!form.dataset.ready) {
+    form.dataset.ready = "true";
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      try { await api.admin.createInterest(Object.fromEntries(new FormData(form))); form.reset(); await render(); notify("Interest added."); } catch (error) { notify(error.message, true); }
+    });
+  }
+  await render();
+}
+
+async function loadComplaints(target) {
+  const render = async () => {
+    const messages = rows(await api.admin.messages());
+    target.innerHTML = cards(messages, item => `<p class="eyebrow">${escapeHtml(item.status || "PENDING")}</p><h3>${escapeHtml(item.title || "Complaint")}</h3><p>${escapeHtml(item.description || "")}</p><p>${escapeHtml(item.email || "")} · ${escapeHtml(item.phone || "")}</p><div class="detail-actions"><button class="button subtle" data-reply="${escapeHtml(item.id)}">Mark replied</button><button class="button subtle" data-delete-message="${escapeHtml(item.id)}">Delete</button></div>`);
+    target.querySelectorAll("[data-reply]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.messageStatus(button.dataset.reply, "replied"); await render(); notify("Message marked replied."); } catch (error) { notify(error.message, true); } }));
+    target.querySelectorAll("[data-delete-message]").forEach(button => button.addEventListener("click", async () => { if (!confirm("Delete this contact message?")) return; try { await api.admin.removeMessage(button.dataset.deleteMessage); await render(); notify("Message deleted."); } catch (error) { notify(error.message, true); } }));
+  };
+  await render();
+}
+
+async function loadAdminBookings(target) {
+  const form = document.querySelector("#admin-bookings-form");
+  const render = async () => {
+    const clientId = form.elements.client_id.value.trim();
+    if (!clientId) { target.innerHTML = '<div class="empty">Enter a client ID to view that client’s bookings.</div>'; return; }
+    const source = form.elements.type.value === "hotels" ? api.admin.bookings.hotels : form.elements.type.value === "flights" ? api.admin.bookings.flights : api.admin.bookings.all;
+    const bookings = rows(await source(clientId));
+    target.innerHTML = bookings.length ? cards(bookings, item => `<p class="eyebrow">${escapeHtml(item.status || item.type || "BOOKING")}</p><h3>${escapeHtml(item.details?.hotel_name || item.details?.airline || item.provider_name || item.name || "Booking")}</h3><p>${escapeHtml(item.check_in_date || item.booking_date || item.created_at || "")}</p><p>${escapeHtml(item.total_price != null ? `${item.currency || "USD"} ${item.total_price}` : "Price unavailable")}</p>`) : '<div class="empty">No bookings found for this client.</div>';
+  };
+  if (!form.dataset.ready) {
+    form.dataset.ready = "true";
+    form.addEventListener("submit", event => { event.preventDefault(); render().catch(error => { target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }); });
+    try {
+      const users = rows(await api.admin.users());
+      document.querySelector("#client-options").innerHTML = users.map(user => {
+        const clientId = user.client_id || user.client?.id;
+        const name = user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email || "Client";
+        return clientId ? `<option value="${escapeHtml(clientId)}">${escapeHtml(name)} — client #${escapeHtml(clientId)}</option>` : "";
+      }).join("");
+    } catch {}
+  }
+  await render();
+}

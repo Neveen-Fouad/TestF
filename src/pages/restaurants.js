@@ -20,8 +20,9 @@ async function searchRestaurants() {
       const restaurant = item.restaurant || item;
       const name = restaurant.name || restaurant.title || "Restaurant";
       const id = restaurant.id || restaurant.location_id || restaurant.locationId || restaurant.documentId;
+      const detailsLink = id ? ` <a class="button subtle" href="/pages/restaurant-details.html?id=${encodeURIComponent(id)}">View details</a>` : "";
       const reviewLink = session.isLoggedIn() && id ? ` <a class="button subtle" href="/pages/reviews.html?type=restaurant&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}">Write a review</a>` : "";
-      return `<article class="result-card"><p class="eyebrow">Restaurant</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(restaurant.address || restaurant.location?.name || restaurant.location || "")}</p><p>★ ${escapeHtml(restaurant.rating || restaurant.averageRating || "—")}${restaurant.cuisine ? ` · ${escapeHtml(restaurant.cuisine)}` : ""}</p>${reviewLink}</article>`;
+      return `<article class="result-card"><p class="eyebrow">Restaurant</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(restaurant.address || restaurant.location?.name || restaurant.location || "")}</p><p>★ ${escapeHtml(restaurant.rating || restaurant.averageRating || "—")}${restaurant.cuisine ? ` · ${escapeHtml(restaurant.cuisine)}` : ""}</p>${detailsLink}${reviewLink}</article>`;
     }).join("")}<p class="results-summary" role="status">${items.length} restaurant${items.length === 1 ? "" : "s"} found in ${escapeHtml(values.city)}.</p>` : '<div class="empty">No restaurants matched those details. Try a nearby city or a lower rating.</div>';
     focusResults();
   } catch (error) {

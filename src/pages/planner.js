@@ -18,14 +18,10 @@ if (requireLogin()) plannerForm.addEventListener("submit", async event => {
   values.number_of_travels = Number(values.number_of_travels);
   values.number_of_days = Number(values.number_of_days);
   values.budget = Number(values.budget);
-  values.estimated_expenses = Number(values.estimated_expenses || 0);
-  const endDate = new Date(`${values.start_date}T00:00:00`);
-  endDate.setDate(endDate.getDate() + values.number_of_days);
-  values.end_date = endDate.toISOString().slice(0, 10);
   button.disabled = true;
   button.textContent = "Creating trip…";
   try {
-    const response = await api.trips.create(values, !session.isAdmin());
+    const response = await api.trips.create(values, true);
     const trip = response?.data || response;
     const id = trip?.id || trip?.trip?.id;
     document.querySelector("#plan-result").innerHTML = `<section class="plan-success"><span>✦</span><div><p class="eyebrow">TRIP CREATED</p><h2>${escapeHtml(trip?.destination || values.destination)}</h2><p>${escapeHtml(response?.message || "The trip has been created.")}</p></div>${id ? `<a class="button subtle" href="/pages/trip-details.html?id=${encodeURIComponent(id)}">Open itinerary</a>` : ""}</section>`;

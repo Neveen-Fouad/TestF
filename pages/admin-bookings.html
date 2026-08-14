@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Client bookings | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/admin.css">
+</head>
+<body data-admin-page="bookings">
+  <main class="page split admin-shell">
+    <div data-admin-sidebar></div>
+    <section>
+      <p class="eyebrow">ADMINISTRATION</p><h1>Client bookings</h1><p class="admin-lead">Review hotel and flight bookings for a specific client.</p>
+      <form id="admin-bookings-form" class="panel toolbar"><div class="field"><label>Client ID</label><input name="client_id" type="number" min="1" list="client-options" required><datalist id="client-options"></datalist></div><div class="field"><label>Booking type</label><select name="type"><option value="all">All bookings</option><option value="hotels">Hotels only</option><option value="flights">Flights only</option></select></div><button class="button">View bookings</button></form>
+      <div id="admin-content" class="results"><div class="empty">Enter a client ID to view bookings.</div></div>
+    </section>
+  </main>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/admin.js"></script>
+</body>
+</html>
