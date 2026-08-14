@@ -64,8 +64,10 @@ async function runSearch() {
     target.innerHTML = hotels.length ? `${hotels.map((hotel, index) => {
       const name = hotel.name || hotel.hotel_name || hotel.property?.name || "Hotel";
       const id = hotel.id || hotel.hotel_id || hotel.property?.id || index;
-      const price = hotel.price || hotel.price_per_night || hotel.priceBreakdown?.grossPrice?.value || "Price on request";
-      return `<article class="result-card"><p class="eyebrow">Hotel</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(hotel.address || hotel.city || hotel.property?.address || "")}</p><p>★ ${escapeHtml(hotel.rating || hotel.review_score || hotel.property?.reviewScore || "—")} · ${escapeHtml(price)}</p><label><input type="checkbox" data-compare="${index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label> <a class="button subtle" data-details="${index}" href="/pages/hotel-details.html?id=${encodeURIComponent(id)}">View details</a>${session.isLoggedIn() ? ` <button class="button subtle" type="button" data-favorite="${escapeHtml(id)}">Save</button>` : ""}</article>`;
+      const price = (typeof hotel.price === "object" ? hotel.price?.priceSummary?.definition?.displayPrice : hotel.price) || hotel.price_per_night || hotel.priceBreakdown?.grossPrice?.value || "Price on request";
+      const rating = hotel.guestRating?.rating || hotel.rating || hotel.review_score || hotel.property?.reviewScore || "—";
+      const address = hotel.address || hotel.city || hotel.property?.address || (hotel.messages?.length ? hotel.messages[hotel.messages.length - 1] : "");
+      return `<article class="result-card"><p class="eyebrow">Hotel</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(address)}</p><p>★ ${escapeHtml(rating)} · ${escapeHtml(price)}</p><label><input type="checkbox" data-compare="${index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label> <a class="button subtle" data-details="${index}" href="./hotel-details.html?id=${encodeURIComponent(id)}">View details</a>${session.isLoggedIn() ? ` <button class="button subtle" type="button" data-favorite="${escapeHtml(id)}">Save</button>` : ""}</article>`;
     }).join("")}<p class="results-summary" role="status">${hotels.length} stay${hotels.length === 1 ? "" : "s"} found for ${escapeHtml(filters.destination)}.</p>` : '<div class="empty">No hotels matched those details. Try changing your dates, budget, or destination.</div>';
     bindHotelActions(hotels);
     focusResults();

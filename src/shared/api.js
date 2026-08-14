@@ -149,7 +149,7 @@ export async function download(path, token = session.token()) {
 
 export const rows = payload => {
   const queue = [payload];
-  const keys = ["data", "results", "hotels", "trips", "details", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories", "interests"];
+  const keys = ["data", "results", "hotels", "properties", "trips", "details", "itineraries", "restaurants", "items", "notifications", "savedTrips", "bookingHistory", "favouriteDestinations", "memories", "your_memories", "interests"];
   while (queue.length) {
     const value = queue.shift();
     if (Array.isArray(value)) return value;
