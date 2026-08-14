@@ -365,6 +365,7 @@ export function mountAdminSidebar(active = "") {
   if (!host) return;
   const sidebarLinks = [
     ["Dashboard", "/pages/admin.html"],
+    ["Live inventory", "/pages/admin-inventory.html"],
     ["Users", "/pages/admin-users.html"],
     ["Bookings", "/pages/admin-bookings.html"],
     ["Trips", "/pages/admin-trips.html"],

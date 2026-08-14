@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Live travel inventory | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/admin.css">
+</head>
+<body data-admin-page="live-inventory">
+  <main class="page split admin-shell">
+    <div data-admin-sidebar></div>
+    <section class="admin-main">
+      <header class="admin-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRATION</p>
+          <h1>Live travel inventory</h1>
+          <p>External hotel, restaurant, and flight results load automatically.</p>
+        </div>
+        <button class="button subtle" id="refresh-inventory" type="button">Refresh all</button>
+      </header>
+      <div id="inventory-warning" class="admin-warning" hidden></div>
+
+      <section class="admin-inventory-section" aria-labelledby="admin-hotels-title">
+        <div class="admin-section-heading"><div><h2 id="admin-hotels-title">Hotels</h2><p>Cairo, Alexandria, Istanbul, Dubai, and Paris · next available stay</p></div><strong id="hotel-count">0</strong></div>
+        <div id="admin-hotels" class="results"><div class="empty">Loading available hotels…</div></div>
+      </section>
+
+      <section class="admin-inventory-section" aria-labelledby="admin-restaurants-title">
+        <div class="admin-section-heading"><div><h2 id="admin-restaurants-title">Restaurants</h2><p>Cairo, Alexandria, Istanbul, Dubai, and Paris</p></div><strong id="restaurant-count">0</strong></div>
+        <div id="admin-restaurants" class="results"><div class="empty">Loading available restaurants…</div></div>
+      </section>
+
+      <section class="admin-inventory-section" aria-labelledby="admin-flights-title">
+        <div class="admin-section-heading"><div><h2 id="admin-flights-title">Flights</h2><p>Cairo to Istanbul, Dubai, Paris, and London · next available departure</p></div><strong id="flight-count">0</strong></div>
+        <div id="admin-flights" class="results"><div class="empty">Loading available flights…</div></div>
+      </section>
+    </section>
+  </main>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/admin-inventory.js"></script>
+</body>
+</html>
