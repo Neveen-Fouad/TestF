@@ -1,5 +1,6 @@
 import { api } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("hotels");
 const id = new URLSearchParams(location.search).get("id");
@@ -21,5 +22,6 @@ if (!hotel) {
   const price = (typeof hotel.price === "object" ? hotel.price?.priceSummary?.definition?.displayPrice : hotel.price) || hotel.price_per_night || hotel.priceBreakdown?.grossPrice?.value || "Price on request";
   const rating = hotel.guestRating?.rating || hotel.rating || hotel.review_score || hotel.property?.reviewScore || "—";
   const address = hotel.description || hotel.address || hotel.city || hotel.property?.address || (hotel.messages?.length ? hotel.messages[hotel.messages.length - 1] : "");
-  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions"><a class="button" href="/pages/hotel-booking.html?id=${encodeURIComponent(hotelId || "")}">Book this hotel</a>${hotelId ? ` <a class="button subtle" href="/pages/reviews.html?type=hotel&id=${encodeURIComponent(hotelId)}&name=${encodeURIComponent(name)}">Write a review</a>` : ""}</div>`;
+  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions"><a class="button" href="/pages/hotel-booking.html?id=${encodeURIComponent(hotelId || "")}">Book this hotel</a>${hotelId ? ` <a class="button subtle" href="/pages/reviews.html?type=hotel&id=${encodeURIComponent(hotelId)}&name=${encodeURIComponent(name)}">Write a review</a>` : ""}${favouriteControl(hotelId, "hotel")}</div>`;
+  bindFavouriteControls(target);
 }

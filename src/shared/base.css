@@ -211,6 +211,12 @@ textarea:focus-visible {
   color: var(--blue);
 }
 .button.subtle:hover { border-color: var(--blue); background: var(--sky); }
+.favourite-button { white-space: nowrap; }
+.favourite-button.is-saved {
+  border-color: #f4b4b8;
+  background: #fff5f5;
+  color: #bd3d42;
+}
 .text-action {
   display: inline-flex;
   align-items: center;

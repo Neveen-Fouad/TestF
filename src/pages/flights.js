@@ -1,6 +1,7 @@
 import { api, rows } from "../shared/api.js";
 import { constrainFutureDate } from "../shared/forms.js";
 import { escapeHtml, mountNavigation, notify, showRecoverableState } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("flights");
 const target = document.querySelector("#flights");
@@ -69,11 +70,12 @@ async function searchFlights() {
       const price = item.price?.formatted || item.price?.amount || item.price?.raw || item.price || "Price on request";
       const id = String(item.id || index);
       const linkParameters = new URLSearchParams({ id, ...values });
-      return `<article class="result-card"><p class="eyebrow">Flight</p><h3>${escapeHtml(carrier)}</h3><p>${escapeHtml(route)}</p><p>${escapeHtml(price)}</p><a class="button subtle" data-details="${index}" href="/pages/flight-details.html?${escapeHtml(linkParameters.toString())}">View details</a></article>`;
+      return `<article class="result-card"><p class="eyebrow">Flight</p><h3>${escapeHtml(carrier)}</h3><p>${escapeHtml(route)}</p><p>${escapeHtml(price)}</p><a class="button subtle" data-details="${index}" href="/pages/flight-details.html?${escapeHtml(linkParameters.toString())}">View details</a>${favouriteControl(id, "flight")}</article>`;
     }).join("")}<p class="results-summary" role="status">${items.length} flight option${items.length === 1 ? "" : "s"} found.</p>` : '<div class="empty">No flights matched that route and date. Try a different day or nearby airport.</div>';
     target.querySelectorAll("[data-details]").forEach(link => link.addEventListener("click", () => {
       sessionStorage.setItem("journovo_selected_flight", JSON.stringify({ ...items[Number(link.dataset.details)], search: values }));
     }));
+    bindFavouriteControls(target);
     focusResults();
   } catch (error) {
     showRecoverableState(target, error.message, { action: searchFlights });
