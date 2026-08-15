@@ -1,6 +1,7 @@
 import { api } from "../shared/api.js";
 import { getHotelId } from "../shared/hotels.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("hotels");
 const id = getHotelId(new URLSearchParams(location.search).get("id"));
@@ -26,5 +27,6 @@ if (!hotel) {
   const bookingAction = hotelId
     ? `<a class="button" href="/pages/hotel-booking.html?id=${encodeURIComponent(hotelId)}">Book this hotel</a>`
     : '<span class="muted">Booking is unavailable because this hotel has no valid provider ID.</span>';
-  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions">${bookingAction}${hotelId ? ` <a class="button subtle" href="/pages/reviews.html?type=hotel&id=${encodeURIComponent(hotelId)}&name=${encodeURIComponent(name)}">Write a review</a>` : ""}</div>`;
+  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions">${bookingAction}${hotelId ? ` <a class="button subtle" href="/pages/reviews.html?type=hotel&id=${encodeURIComponent(hotelId)}&name=${encodeURIComponent(name)}">Write a review</a>` : ""}${favouriteControl(hotelId, "hotel")}</div>`;
+  bindFavouriteControls(target);
 }

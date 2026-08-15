@@ -14,6 +14,102 @@ let accessibilityObserver;
 let experienceReady = false;
 let submittedForm;
 let submittedAt = 0;
+const defaultSiteSettings = Object.freeze({ name: "Journovo", slogan: "Make every journey yours." });
+let siteSettings = { ...defaultSiteSettings };
+let siteSettingsRequest;
+
+function normalizeSiteSettings(payload) {
+  let value = payload?.data ?? payload;
+  if (Array.isArray(value)) value = value[0];
+  if (Array.isArray(value?.data)) value = value.data[0];
+  return value && typeof value === "object" ? value : {};
+}
+
+function safeWebUrl(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value, location.origin);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function currentSiteName() {
+  return String(siteSettings.name || defaultSiteSettings.name).trim() || defaultSiteSettings.name;
+}
+
+function siteBrandMarkup(admin = false) {
+  const name = escapeHtml(currentSiteName());
+  const logo = safeWebUrl(siteSettings.logo_url || siteSettings.logoUrl || siteSettings.logo);
+  const mark = logo
+    ? `<img class="brand-logo" src="${escapeHtml(logo)}" alt="${name} logo">`
+    : `<span class="brand-mark" aria-hidden="true">${escapeHtml(currentSiteName().charAt(0).toUpperCase())}</span>`;
+  return `${mark}<span>${name}</span>${admin ? " <span>Admin</span>" : ""}`;
+}
+
+function replaceDefaultBrand(root) {
+  if (!root || currentSiteName() === defaultSiteSettings.name) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      return parent && !["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"].includes(parent.tagName)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => { node.nodeValue = node.nodeValue.replace(/\bJournovo\b/gi, currentSiteName()); });
+}
+
+function mountSiteFooter() {
+  let footer = document.querySelector("[data-site-settings-footer]");
+  if (!footer) {
+    footer = document.querySelector("footer.footer") || document.createElement("footer");
+    footer.classList.add("footer", "site-settings-footer");
+    footer.dataset.siteSettingsFooter = "";
+    if (!footer.isConnected) document.body.append(footer);
+  }
+  const phone = String(siteSettings.phone || "").trim();
+  const facebook = safeWebUrl(siteSettings.facebook);
+  const instagram = safeWebUrl(siteSettings.instagram);
+  const contacts = [
+    phone ? `<a href="tel:${encodeURIComponent(phone)}">${escapeHtml(phone)}</a>` : "",
+    facebook ? `<a href="${escapeHtml(facebook)}" target="_blank" rel="noopener noreferrer">Facebook</a>` : "",
+    instagram ? `<a href="${escapeHtml(instagram)}" target="_blank" rel="noopener noreferrer">Instagram</a>` : ""
+  ].filter(Boolean).join(" <span aria-hidden=\"true\">·</span> ");
+  footer.innerHTML = `<span>© ${new Date().getFullYear()} ${escapeHtml(currentSiteName())}. ${escapeHtml(siteSettings.slogan || defaultSiteSettings.slogan)}</span>${contacts ? `<span class="site-footer-links">${contacts}</span>` : ""}`;
+}
+
+function applySiteSettings() {
+  document.documentElement.dataset.siteName = currentSiteName();
+  document.querySelectorAll("[data-site-brand]").forEach(brand => {
+    brand.innerHTML = siteBrandMarkup(brand.dataset.siteBrand === "admin");
+    brand.setAttribute("aria-label", `${currentSiteName()} home`);
+  });
+  document.querySelectorAll("title, meta[name='description']").forEach(element => {
+    if (element.tagName === "TITLE") element.textContent = element.textContent.replace(/\bJournovo\b/gi, currentSiteName());
+    else element.content = element.content.replace(/\bJournovo\b/gi, currentSiteName());
+  });
+  replaceDefaultBrand(document.body);
+  mountSiteFooter();
+}
+
+export async function loadSiteSettings({ refresh = false } = {}) {
+  if (!refresh && siteSettingsRequest) return siteSettingsRequest;
+  siteSettingsRequest = api.site.settings().then(payload => {
+    siteSettings = { ...defaultSiteSettings, ...normalizeSiteSettings(payload) };
+    applySiteSettings();
+    return siteSettings;
+  }).catch(() => siteSettings).finally(() => { siteSettingsRequest = undefined; });
+  return siteSettingsRequest;
+}
+
+export function updateSiteSettings(payload) {
+  siteSettings = { ...defaultSiteSettings, ...normalizeSiteSettings(payload) };
+  applySiteSettings();
+}
 
 function enhanceFormLabels(root = document) {
   root.querySelectorAll(".field > label:not([for])").forEach((label, index) => {
@@ -68,9 +164,14 @@ function enableAccessibilityEnhancements() {
 
   if (accessibilityObserver) return;
   accessibilityObserver = new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      replaceDefaultBrand(node.parentElement);
+      return;
+    }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     enhanceFormLabels(node.matches?.(".field") ? node.parentElement : node);
     enhanceFeedbackStates(node);
+    replaceDefaultBrand(node);
   })));
   accessibilityObserver.observe(document.body, { childList: true, subtree: true });
 }
@@ -250,6 +351,7 @@ export function mountNavigation(active = "") {
   enableExperienceEnhancements();
   const host = document.querySelector("[data-navigation]");
   if (!host) return;
+  void loadSiteSettings();
 
   const loggedIn = session.isLoggedIn();
   const user = session.user();
@@ -264,7 +366,7 @@ export function mountNavigation(active = "") {
     : '<a class="mobile-nav-action" href="/pages/login.html">Sign in</a><a class="mobile-nav-action" href="/pages/register.html">Create account</a>';
 
   host.innerHTML = `<header class="topbar">
-    <a class="brand" href="/" aria-label="Journovo home"><span class="brand-mark" aria-hidden="true">J</span><span>Journovo</span></a>
+    <a class="brand" data-site-brand href="/" aria-label="${escapeHtml(currentSiteName())} home">${siteBrandMarkup()}</a>
     <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span></button>
     <nav id="primary-navigation" aria-label="Primary navigation">
       ${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}
@@ -365,6 +467,7 @@ export function mountAdminSidebar(active = "") {
   enableAccessibilityEnhancements();
   const host = document.querySelector("[data-admin-sidebar]");
   if (!host) return;
+  void loadSiteSettings();
   const sidebarLinks = [
     ["Dashboard", "/pages/admin.html"],
     ["Live inventory", "/pages/admin-inventory.html"],
@@ -378,7 +481,7 @@ export function mountAdminSidebar(active = "") {
     ["Revenue", "/pages/admin-revenue.html"],
     ["Site settings", "/pages/admin-settings.html"]
   ];
-  const content = `<aside class="sidebar admin-sidebar"><a class="admin-brand" href="/pages/admin.html">Journovo <span>Admin</span></a><p>ADMINISTRATION</p>${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}<button class="admin-logout" type="button" data-admin-logout>Log out</button></aside>`;
+  const content = `<aside class="sidebar admin-sidebar"><a class="admin-brand" data-site-brand="admin" href="/pages/admin.html">${siteBrandMarkup(true)}</a><p>ADMINISTRATION</p>${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}<button class="admin-logout" type="button" data-admin-logout>Log out</button></aside>`;
   mountCollapsibleSidebar(host, content, "Administration menu", "admin-sidebar");
   host.querySelector("[data-admin-logout]").addEventListener("click", async () => {
     try { await api.auth.logout(); } catch {}

@@ -1,5 +1,6 @@
 import { api, rows, session } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation();
 const target = document.querySelector("#trips");
@@ -28,7 +29,7 @@ try {
       : session.isLoggedIn() && id
         ? `<button class="button" type="button" data-book-trip="${escapeHtml(id)}">Add to my trips</button>${itineraryLink}`
         : `<a class="button subtle" href="/pages/login.html?returnTo=%2Fpages%2Ftrips.html%3Fcatalog%3D1">Sign in to add this trip</a>${itineraryLink}`;
-    return `<article class="result-card"><div class="eyebrow">${escapeHtml(trip.destination || trip.country || "JOURNEY")}</div><h3>${escapeHtml(trip.name || trip.title || "Untitled trip")}</h3><p>${escapeHtml(trip.description || trip.duration || trip.style || "View its live daily itinerary.")} · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated</p>${action}</article>`;
+    return `<article class="result-card"><div class="eyebrow">${escapeHtml(trip.destination || trip.country || "JOURNEY")}</div><h3>${escapeHtml(trip.name || trip.title || "Untitled trip")}</h3><p>${escapeHtml(trip.description || trip.duration || trip.style || "View its live daily itinerary.")} · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated</p>${action}${!memberView ? favouriteControl(id, "trip") : ""}</article>`;
   }).join("") : '<div class="empty">No trips are available.</div>';
   target.querySelectorAll("[data-book-trip]").forEach(button => button.addEventListener("click", async () => {
     button.disabled = true;
@@ -41,6 +42,7 @@ try {
       notify(error.message, true);
     }
   }));
+  bindFavouriteControls(target);
 } catch (error) {
   target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
 }

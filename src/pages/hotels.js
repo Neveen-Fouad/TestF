@@ -2,6 +2,7 @@ import { api, rows, session } from "../shared/api.js";
 import { getHotelId } from "../shared/hotels.js";
 import { escapeHtml, mountNavigation, notify, showRecoverableState } from "../shared/navigation.js";
 import { constrainDateRange } from "../shared/forms.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("hotels");
 const target = document.querySelector("#hotels");
@@ -42,20 +43,7 @@ function bindHotelActions(hotels) {
     save(values);
   }));
 
-  target.querySelectorAll("[data-favorite]").forEach(button => button.addEventListener("click", async () => {
-    const label = button.textContent;
-    button.disabled = true;
-    button.textContent = "Saving…";
-    try {
-      await api.favourites.add(button.dataset.favorite, "hotel");
-      button.textContent = "Saved";
-      notify("Saved to Favorites.");
-    } catch (error) {
-      button.disabled = false;
-      button.textContent = label;
-      notify(error.message, true);
-    }
-  }));
+  bindFavouriteControls(target);
 }
 
 async function runSearch() {

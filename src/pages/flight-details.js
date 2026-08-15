@@ -1,5 +1,6 @@
 import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("flights");
 const target = document.querySelector("#details");
@@ -35,5 +36,6 @@ if (!flight) {
   const origin = leg.origin?.name || leg.origin?.displayCode || flight.origin || "Origin";
   const destination = lastLeg.destination?.name || lastLeg.destination?.displayCode || flight.destination || "Destination";
   const id = flight.id || requestedId;
-  target.innerHTML = `<p class="eyebrow">FLIGHT DETAILS</p><h1>${escapeHtml(carrier)}</h1><p class="lead">${escapeHtml(origin)} → ${escapeHtml(destination)}</p><p>${escapeHtml(flight.departure || leg.departure || "")} → ${escapeHtml(flight.arrival || lastLeg.arrival || "")}</p><p>${escapeHtml(flight.price?.formatted || flight.price?.amount || flight.price?.raw || "Price on request")}</p><div class="detail-actions"><a class="button" href="/pages/flight-booking.html">Book this flight</a>${id ? ` <a class="button subtle" href="/pages/reviews.html?type=flight&id=${encodeURIComponent(id)}&name=${encodeURIComponent(carrier)}">Write a review</a>` : ""}</div>`;
+  target.innerHTML = `<p class="eyebrow">FLIGHT DETAILS</p><h1>${escapeHtml(carrier)}</h1><p class="lead">${escapeHtml(origin)} → ${escapeHtml(destination)}</p><p>${escapeHtml(flight.departure || leg.departure || "")} → ${escapeHtml(flight.arrival || lastLeg.arrival || "")}</p><p>${escapeHtml(flight.price?.formatted || flight.price?.amount || flight.price?.raw || "Price on request")}</p><div class="detail-actions"><a class="button" href="/pages/flight-booking.html">Book this flight</a>${id ? ` <a class="button subtle" href="/pages/reviews.html?type=flight&id=${encodeURIComponent(id)}&name=${encodeURIComponent(carrier)}">Write a review</a>` : ""}${favouriteControl(id, "flight")}</div>`;
+  bindFavouriteControls(target);
 }
