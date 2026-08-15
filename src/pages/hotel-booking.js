@@ -17,7 +17,7 @@ if (requireLogin()) {
       values.rooms = Number(values.rooms);
       const result = await api.hotels.book(values);
       const booking = result?.data || result;
-      location.assign(`/pages/payments.html?booking_id=${encodeURIComponent(booking.id || booking.booking_id || "")}`);
+      location.assign(`/pages/payments?booking_id=${encodeURIComponent(booking.id || booking.booking_id || "")}`);
     } catch (error) {
       notify(error.message, true);
       button.disabled = false;

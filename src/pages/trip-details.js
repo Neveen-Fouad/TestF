@@ -111,9 +111,17 @@ function meaningful(value) {
   return !Array.isArray(value) || value.length > 0;
 }
 
+function formatText(value) {
+  return escapeHtml(planText(value))
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+}
+
 function formatPlanValue(value) {
-  if (Array.isArray(value)) return `<ul>${value.map(item => `<li>${escapeHtml(planText(item))}</li>`).join("")}</ul>`;
-  return `<p>${escapeHtml(planText(value))}</p>`;
+  if (Array.isArray(value)) return `<ul>${value.map(item => `<li>${formatText(item)}</li>`).join("")}</ul>`;
+  return `<p>${formatText(value)}</p>`;
 }
 
 function formatCurrency(value) {
@@ -124,8 +132,13 @@ function formatCurrency(value) {
 
 function planText(value) {
   if (typeof value === "string" || typeof value === "number") return String(value);
-  if (Array.isArray(value)) return value.map(planText).join(", ");
-  if (value && typeof value === "object") return value.name || value.title || value.description || Object.values(value).filter(item => typeof item === "string").join(" · ");
+  if (Array.isArray(value)) return value.map(planText).join("\n");
+  if (value && typeof value === "object") {
+    const name = value.name || value.title;
+    const desc = value.description || value.details || value.note;
+    if (name && desc) return `**${name}**\n${desc}`;
+    return name || desc || Object.values(value).filter(item => typeof item === "string").join(" · ");
+  }
   return "";
 }
 
@@ -158,8 +171,8 @@ function renderTrip() {
   tripTarget.hidden = false;
   const destination = trip.destination || "Trip itinerary";
   const actions = trip.is_ai_generated
-    ? `<a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-delete>Delete</button>`
-    : `<a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>`;
+    ? `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-delete>Delete</button>`
+    : `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>`;
   tripTarget.innerHTML = `<div class="panel-heading"><div><div class="eyebrow">YOUR JOURNEY</div><h1>${escapeHtml(destination)}</h1><p class="trip-overview">${escapeHtml(trip.style || "Your live itinerary from Journovo.")} · ${escapeHtml(trip.number_of_days || "—")} days · ${escapeHtml(trip.number_of_travels || "—")} travellers · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated cost</p></div><div class="detail-actions">${actions}</div></div>`;
   tripTarget.querySelector("[data-edit]")?.addEventListener("click", () => {
     for (const key of ["destination", "classes", "number_of_travels", "budget", "estimated_expenses", "number_of_days", "start_date", "style"]) form.elements[key].value = key === "start_date" ? String(trip[key] || "").slice(0, 10) : trip[key] ?? "";
