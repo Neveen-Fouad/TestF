@@ -1,4 +1,5 @@
 import { api, rows, session } from "../shared/api.js";
+import { getHotelId } from "../shared/hotels.js";
 import { escapeHtml, mountNavigation, notify, showRecoverableState } from "../shared/navigation.js";
 import { constrainDateRange } from "../shared/forms.js";
 
@@ -7,7 +8,7 @@ const target = document.querySelector("#hotels");
 const form = document.querySelector("#search");
 const count = document.querySelector("#compare-count");
 const selected = () => JSON.parse(sessionStorage.getItem("journovo_compare_hotels") || "[]");
-const hotelKey = hotel => String(hotel.id || hotel.hotel_id || hotel.property?.id || hotel.name || hotel.hotel_name || "");
+const hotelKey = hotel => getHotelId(hotel) || String(hotel.name || hotel.hotel_name || "");
 const save = hotels => {
   sessionStorage.setItem("journovo_compare_hotels", JSON.stringify(hotels));
   count.textContent = String(hotels.length);
@@ -23,7 +24,10 @@ function focusResults() {
 
 function bindHotelActions(hotels) {
   target.querySelectorAll("[data-details]").forEach(link => link.addEventListener("click", () => {
-    sessionStorage.setItem("journovo_selected_hotel", JSON.stringify(hotels[Number(link.dataset.details)]));
+    const hotel = hotels[Number(link.dataset.details)];
+    const hotelId = getHotelId(hotel);
+    sessionStorage.setItem("journovo_selected_hotel", JSON.stringify(hotel));
+    if (hotelId) sessionStorage.setItem("journovo_selected_hotel_id", hotelId);
   }));
 
   target.querySelectorAll("[data-compare]").forEach(input => input.addEventListener("change", () => {
@@ -63,11 +67,17 @@ async function runSearch() {
     const selectedKeys = new Set(selected().map(hotelKey));
     target.innerHTML = hotels.length ? `${hotels.map((hotel, index) => {
       const name = hotel.name || hotel.hotel_name || hotel.property?.name || "Hotel";
-      const id = hotel.id || hotel.hotel_id || hotel.property?.id || index;
+      const id = getHotelId(hotel);
       const price = (typeof hotel.price === "object" ? hotel.price?.priceSummary?.definition?.displayPrice : hotel.price) || hotel.price_per_night || hotel.priceBreakdown?.grossPrice?.value || "Price on request";
       const rating = hotel.guestRating?.rating || hotel.rating || hotel.review_score || hotel.property?.reviewScore || "—";
       const address = hotel.address || hotel.city || hotel.property?.address || (hotel.messages?.length ? hotel.messages[hotel.messages.length - 1] : "");
-      return `<article class="result-card"><p class="eyebrow">Hotel</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(address)}</p><p>★ ${escapeHtml(rating)} · ${escapeHtml(price)}</p><label><input type="checkbox" data-compare="${index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label> <a class="button subtle" data-details="${index}" href="./hotel-details.html?id=${encodeURIComponent(id)}">View details</a>${session.isLoggedIn() ? ` <button class="button subtle" type="button" data-favorite="${escapeHtml(id)}">Save</button>` : ""}</article>`;
+      const detailsAction = id
+        ? `<a class="button subtle" data-details="${index}" href="./hotel-details.html?id=${encodeURIComponent(id)}">View details</a>`
+        : '<span class="muted">Hotel details are unavailable.</span>';
+      const favouriteAction = session.isLoggedIn() && id
+        ? ` <button class="button subtle" type="button" data-favorite="${escapeHtml(id)}">Save</button>`
+        : "";
+      return `<article class="result-card"><p class="eyebrow">Hotel</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(address)}</p><p>★ ${escapeHtml(rating)} · ${escapeHtml(price)}</p><label><input type="checkbox" data-compare="${index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label> ${detailsAction}${favouriteAction}</article>`;
     }).join("")}<p class="results-summary" role="status">${hotels.length} stay${hotels.length === 1 ? "" : "s"} found for ${escapeHtml(filters.destination)}.</p>` : '<div class="empty">No hotels matched those details. Try changing your dates, budget, or destination.</div>';
     bindHotelActions(hotels);
     focusResults();

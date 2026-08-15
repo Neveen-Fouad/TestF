@@ -38,6 +38,14 @@ body[data-admin-page] .page.split,.admin-shell{grid-template-columns:250px minma
 .admin-warning{margin:0 0 18px;padding:12px 15px;border:1px solid #f2cf86;border-radius:12px;background:#fff8e8;color:#7a5311;font-size:13px}
 .admin-table-wrap{overflow:auto}
 .form{display:grid;gap:18px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.results h2{margin:5px 0;color:var(--navy)}
+.daily-itinerary{display:grid;gap:14px;padding-top:6px}
+.daily-itinerary .admin-section-heading{margin:0}
+.daily-details-container{display:grid;gap:14px}
+.daily-detail{padding:18px;border:1px solid #d8e5f2;border-radius:16px;background:#f8fcff}
+.daily-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.daily-detail-heading h3{margin:0;color:var(--navy);font:700 20px Georgia,serif}
+.daily-detail .field:last-child{grid-column:1/-1}
+.daily-detail textarea{min-height:110px;resize:vertical}
 .admin-inventory-section{margin-top:34px;padding-top:10px}
 .admin-inventory-section>h2{margin:0 0 14px;color:var(--navy);font:700 27px Georgia,serif}
 .admin-inventory-section .results{display:grid;gap:14px;margin-top:16px}

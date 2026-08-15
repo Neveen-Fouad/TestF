@@ -1,4 +1,4 @@
-import { api, rows } from "../shared/api.js";
+import { api, rows, session } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
 
 mountNavigation("explore");
@@ -24,22 +24,25 @@ async function loadTrip() {
   try {
     const tripPayload = await api.trips.show(id);
     trip = tripPayload?.data || tripPayload;
+    const embeddedDays = rows(trip?.details);
     renderTrip();
-    const tripDetails = rows(trip?.details);
-    if (tripDetails.length) renderDays(tripDetails);
-    else await loadItinerary();
+    if (embeddedDays.length) renderDays(embeddedDays);
+    await loadItinerary(embeddedDays);
   } catch (error) {
     tripTarget.innerHTML = `<div class="empty is-error">${escapeHtml(error.message)}</div>`;
     daysTarget.innerHTML = "";
   }
 }
 
-async function loadItinerary() {
-  daysTarget.innerHTML = '<div class="empty">Loading your day-by-day itinerary…</div>';
+async function loadItinerary(fallbackDays = []) {
+  if (!fallbackDays.length) daysTarget.innerHTML = '<div class="empty">Loading your day-by-day itinerary…</div>';
   try {
-    const payload = await api.trips.days(id);
-    renderDays(payload);
+    const itineraryId = trip?.trip_id || trip?.trip?.id || trip?.template_trip_id || id;
+    const payload = await api.trips.days(itineraryId);
+    const days = rows(payload);
+    if (days.length || !fallbackDays.length) renderDays(days);
   } catch (error) {
+    if (fallbackDays.length) return;
     itineraryMeta.textContent = "Itinerary unavailable";
     daysTarget.innerHTML = `<div class="empty is-error">${escapeHtml(error.message)}<br>We could not load this trip’s daily itinerary.</div>`;
   }
@@ -167,12 +170,19 @@ async function updateTrip(event) {
   finally { button.disabled = false; }
 }
 
+function canManageTrip(candidate) {
+  if (candidate.is_pre_made || candidate.is_premade || candidate.is_system || candidate.is_default) return false;
+  const user = session.user() || {};
+  const viewerIds = [user.id, user.user_id, user.client_id, user.user?.id, user.client?.id].filter(value => value != null).map(String);
+  const ownerIds = [candidate.user_id, candidate.client_id, candidate.owner_id, candidate.user?.id, candidate.client?.id, candidate.owner?.id].filter(value => value != null).map(String);
+  return viewerIds.length > 0 && ownerIds.some(value => viewerIds.includes(value));
+}
 function renderTrip() {
   tripTarget.hidden = false;
   const destination = trip.destination || "Trip itinerary";
-  const actions = trip.is_ai_generated
-    ? `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-delete>Delete</button>`
-    : `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a><button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>`;
+  const standardActions = `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a>`;
+  const managementActions = canManageTrip(trip) ? ` <button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>` : "";
+  const actions = `${standardActions}${managementActions}`;
   tripTarget.innerHTML = `<div class="panel-heading"><div><div class="eyebrow">YOUR JOURNEY</div><h1>${escapeHtml(destination)}</h1><p class="trip-overview">${escapeHtml(trip.style || "Your live itinerary from Journovo.")} · ${escapeHtml(trip.number_of_days || "—")} days · ${escapeHtml(trip.number_of_travels || "—")} travellers · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated cost</p></div><div class="detail-actions">${actions}</div></div>`;
   tripTarget.querySelector("[data-edit]")?.addEventListener("click", () => {
     for (const key of ["destination", "classes", "number_of_travels", "budget", "estimated_expenses", "number_of_days", "start_date", "style"]) form.elements[key].value = key === "start_date" ? String(trip[key] || "").slice(0, 10) : trip[key] ?? "";

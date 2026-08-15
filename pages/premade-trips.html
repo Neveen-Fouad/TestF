@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Browse Journovo's ready-made travel itineraries.">
+  <title>Premade trips | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/home.css">
+  <link rel="stylesheet" href="/src/pages/premade-trips.css">
+</head>
+<body>
+  <div data-navigation></div>
+  <main class="premade-trips-page">
+    <section class="home-shell premade-trips-hero">
+      <p class="eyebrow">READY-MADE JOURNEYS</p>
+      <h1>Find a trip worth taking.</h1>
+      <p>Explore every curated Journovo itinerary, then open one to see its day-by-day plan.</p>
+    </section>
+    <section class="home-shell home-section premade-trips-section" aria-labelledby="premade-trips-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CURATED FOR YOU</p>
+          <h2 id="premade-trips-title">All premade trips</h2>
+        </div>
+      </div>
+      <div id="premade-trips" class="trip-grid" aria-live="polite"><div class="empty">Loading journeys…</div></div>
+    </section>
+  </main>
+  <footer class="footer">© 2026 Journovo. Make every journey yours.</footer>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/premade-trips.js"></script>
+</body>
+</html>

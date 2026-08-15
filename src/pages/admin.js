@@ -13,7 +13,16 @@ async function load() {
     if (page === "bookings") { await loadAdminBookings(target); return; }
     if (page === "trips") {
       const trips = rows(await api.trips.list());
-      target.innerHTML = trips.length ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th></tr></thead><tbody>${trips.map(trip => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No trips were returned.</div>';
+      target.innerHTML = trips.length ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th><th>Actions</th></tr></thead><tbody>${trips.map(trip => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td><td>${trip.id ? `<button class="button subtle" type="button" data-edit-trip="${escapeHtml(trip.id)}">Edit</button> <button class="button subtle" type="button" data-delete-trip="${escapeHtml(trip.id)}">Delete</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No trips were returned.</div>';
+      target.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", async () => {
+        const trip = trips.find(item => String(item.id) === button.dataset.editTrip);
+        if (!trip) return;
+        try { await editAdminTrip(trip); await load(); } catch (error) { notify(error.message, true); }
+      }));
+      target.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
+        if (!confirm("Delete this trip? This cannot be undone.")) return;
+        try { await api.trips.remove(button.dataset.deleteTrip); notify("Trip deleted."); await load(); } catch (error) { notify(error.message, true); }
+      }));
       return;
     }
     if (page === "users") {
@@ -24,8 +33,29 @@ async function load() {
     }
     if (page === "create-trip") {
       const createForm = document.querySelector("#trip-create-form");
+      const detailsContainer = document.querySelector("#daily-details-container");
       constrainFutureDate(createForm.elements.start_date);
-      createForm.addEventListener("submit", async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]); try { const result = await api.trips.create(values); const trip = result?.data || result; notify("Trip created."); location.assign(`/pages/trip-details?id=${encodeURIComponent(trip.id)}`); } catch (error) { notify(error.message, true); } });
+      document.querySelector("#add-day-button").addEventListener("click", () => addDailyDetail(detailsContainer));
+      detailsContainer.addEventListener("click", event => {
+        const removeButton = event.target.closest("[data-remove-day]");
+        if (removeButton) removeButton.closest(".daily-detail").remove();
+      });
+      createForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const values = Object.fromEntries(new FormData(event.currentTarget));
+        for (const key of ["number_of_travels", "number_of_days", "budget", "estimated_expenses"]) values[key] = Number(values[key]);
+        for (const key of ["detail_day", "detail_title", "detail_expenses", "detail_plan"]) delete values[key];
+        values.details = Array.from(detailsContainer.querySelectorAll(".daily-detail"), detail => {
+          const plan = detail.querySelector('[name="detail_plan"]').value.trim();
+          return {
+            day: Number(detail.querySelector('[name="detail_day"]').value),
+            title: detail.querySelector('[name="detail_title"]').value.trim(),
+            expenses: Number(detail.querySelector('[name="detail_expenses"]').value),
+            plan: parseItineraryPlan(plan)
+          };
+        });
+        try { await api.trips.create(values); notify("Trip created."); location.assign("/pages/admin-trips.html"); } catch (error) { notify(error.message, true); }
+      });
       return;
     }
     if (page === "legacy-interests") {
@@ -60,6 +90,42 @@ async function load() {
   } catch (error) { target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
 }
 
+async function editAdminTrip(trip) {
+  const fields = [
+    ["destination", "Destination", trip.destination || trip.name || ""],
+    ["start_date", "Start date (YYYY-MM-DD)", String(trip.start_date || "").slice(0, 10)],
+    ["number_of_days", "Number of days", trip.number_of_days || ""],
+    ["budget", "Budget", trip.budget || ""],
+    ["estimated_expenses", "Estimated expenses", trip.estimated_expenses || ""],
+    ["number_of_travels", "Travellers", trip.number_of_travels || trip.travellers || ""],
+    ["style", "Travel style", trip.style || ""]
+  ];
+  const values = {};
+  for (const [key, label, current] of fields) {
+    const value = prompt(label, current);
+    if (value === null) return;
+    values[key] = value.trim();
+  }
+  for (const key of ["number_of_days", "budget", "estimated_expenses", "number_of_travels"]) {
+    values[key] = Number(values[key]);
+    if (!Number.isFinite(values[key])) throw new Error(`${key.replaceAll("_", " ")} must be a valid number.`);
+  }
+  await api.trips.update(trip.id, values);
+  notify("Trip updated.");
+}
+function addDailyDetail(container) {
+  const nextDay = Math.max(0, ...Array.from(container.querySelectorAll('[name="detail_day"]'), input => Number(input.value) || 0)) + 1;
+  const detail = document.createElement("article");
+  detail.className = "daily-detail";
+  detail.innerHTML = `<div class="daily-detail-heading"><h3>Day itinerary</h3><button class="button subtle" type="button" data-remove-day>Remove</button></div><div class="form-grid"><div class="field"><label>Day</label><input name="detail_day" type="number" min="1" value="${nextDay}" required></div><div class="field"><label>Title</label><input name="detail_title" required placeholder="Arrival and city highlights"></div><div class="field"><label>Expenses</label><input name="detail_expenses" type="number" min="0" step="0.01" value="0" required></div><div class="field"><label>Plan <small>(itinerary text or valid JSON)</small></label><textarea name="detail_plan" rows="4" required placeholder="Morning: explore the old town…"></textarea></div></div>`;
+  container.append(detail);
+  detail.querySelector('[name="detail_title"]').focus();
+}
+
+function parseItineraryPlan(plan) {
+  try { return JSON.parse(plan); }
+  catch { return plan; }
+}
 async function loadDashboard(target) {
   const form = document.querySelector("#dashboard-period");
   const now = new Date();

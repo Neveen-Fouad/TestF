@@ -22,6 +22,16 @@
           <div class="field"><label>Travellers</label><input name="number_of_travels" type="number" min="1" value="1" required></div>
           <div class="field"><label>Travel style</label><input name="style" required placeholder="Culture, adventure, relaxation…"></div>
         </div>
+        <section class="daily-itinerary" aria-labelledby="daily-itinerary-title">
+          <div class="admin-section-heading">
+            <div>
+              <h2 id="daily-itinerary-title">Daily Itinerary</h2>
+              <p>Add optional day-by-day plans for this trip.</p>
+            </div>
+            <button id="add-day-button" class="button subtle" type="button">Add Day</button>
+          </div>
+          <div id="daily-details-container" class="daily-details-container"></div>
+        </section>
         <button class="button">Create trip</button>
       </form>
       <div id="admin-content"></div>
