@@ -223,6 +223,10 @@ export const api = {
   joy: { conversations: () => request("/chat/conversations"), show: id => request(`/chat/conversations/${id}`), send: (message, conversation_id) => request("/chat/messages", { method: "POST", body: { message, conversation_id } }) },
   transportation: { tips: body => request("/transportation/tips", { method: "POST", body }) },
   contact: body => request("/contact", { method: "POST", body, token: null }),
+  site: {
+    // Public, read-only settings used to brand every page. Editing remains under api.admin.
+    settings: () => request("/settings", { token: null })
+  },
   admin: {
     users: () => request("/admin/users"),
     userStatus: (id, is_active) => request(`/admin/users/${id}/status`, { method: "PATCH", body: { is_active } }),

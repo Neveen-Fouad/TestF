@@ -1,5 +1,5 @@
 import { api, rows } from "../shared/api.js";
-import { escapeHtml, mountAdminSidebar, notify, requireAdmin } from "../shared/navigation.js";
+import { escapeHtml, mountAdminSidebar, notify, requireAdmin, updateSiteSettings } from "../shared/navigation.js";
 import { constrainFutureDate } from "../shared/forms.js";
 
 const page = document.body.dataset.adminPage;
@@ -55,7 +55,7 @@ async function load() {
       form.elements.settings_id.value = current.id || "";
       const fields = [["name", "Site name", "text"], ["phone", "Phone", "tel"], ["slogan", "Slogan", "text"], ["facebook", "Facebook URL", "url"], ["instagram", "Instagram URL", "url"], ["logo", "Logo", "file"]];
       target.innerHTML = fields.map(([name, label, type]) => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" ${type === "file" ? 'accept="image/png,image/jpeg,image/svg+xml"' : `value="${escapeHtml(current[name] || "")}"`} ${current.id || type !== "file" ? "" : "required"}></div>`).join("");
-      form.addEventListener("submit", async event => { event.preventDefault(); const data = new FormData(form); const id = data.get("settings_id"); data.delete("settings_id"); if (!data.get("logo")?.size) data.delete("logo"); try { if (id) await api.admin.updateSettings(id, data); else await api.admin.createSettings(data); notify("Site settings saved."); } catch (error) { notify(error.message, true); } });
+      form.addEventListener("submit", async event => { event.preventDefault(); const data = new FormData(form); const id = data.get("settings_id"); data.delete("settings_id"); if (!data.get("logo")?.size) data.delete("logo"); try { const result = id ? await api.admin.updateSettings(id, data) : await api.admin.createSettings(data); updateSiteSettings(result); notify("Site settings saved."); } catch (error) { notify(error.message, true); } });
     }
   } catch (error) { target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
 }

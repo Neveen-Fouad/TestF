@@ -102,6 +102,12 @@ textarea:focus-visible {
   background: var(--warm);
   content: "";
 }
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 11px;
+}
 .topbar nav { display: flex; flex: 1; align-items: center; gap: 4px; }
 .topbar nav a {
   position: relative;
@@ -509,7 +515,10 @@ input[type="radio"] { accent-color: var(--blue); }
 .chat { height: 410px; overflow: auto; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255, 255, 255, .92); box-shadow: var(--shadow-sm); }
 .message { max-width: 75%; margin: 10px 0; padding: 11px 14px; border-radius: 15px 15px 15px 4px; background: var(--sky); line-height: 1.55; }
 .message.mine { margin-left: auto; border-radius: 15px 15px 4px; background: linear-gradient(120deg, var(--blue), var(--blue-bright)); color: #fff; }
-.footer { padding: 34px; border-top: 1px solid rgba(203, 220, 237, .7); color: var(--muted); font-size: 13px; text-align: center; }
+.footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding: 34px; border-top: 1px solid rgba(203, 220, 237, .7); color: var(--muted); font-size: 13px; text-align: center; }
+.site-footer-links { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.site-footer-links a { color: var(--blue); font-weight: 750; }
+.site-footer-links a:hover { color: var(--navy); }
 .skip-link { position: fixed; z-index: 100; top: 12px; left: 12px; padding: 10px 14px; border-radius: 10px; background: var(--navy); color: #fff; font-weight: 800; transform: translateY(-160%); transition: transform .2s ease; }
 .skip-link:focus { transform: translateY(0); }
 .connection-status { position: fixed; z-index: 70; right: 16px; bottom: 16px; max-width: min(420px, calc(100vw - 32px)); padding: 12px 15px; border: 1px solid #f5c37c; border-radius: 13px; background: #fff7e8; box-shadow: var(--shadow-sm); color: #805515; font-size: 13px; font-weight: 750; line-height: 1.45; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity .2s ease, transform .2s ease; }
