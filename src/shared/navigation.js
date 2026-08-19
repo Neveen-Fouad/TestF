@@ -3,6 +3,7 @@ import { api, session } from "./api.js";
 const links = [
   ["Home", "/"],
   ["Explore", "/pages/countries.html"],
+  ["Plan my trip", "/pages/planner.html"],
   ["Hotels", "/pages/hotels.html"],
   ["Restaurants", "/pages/restaurants.html"],
   ["Flights", "/pages/flights.html"],
@@ -440,7 +441,6 @@ export function mountSidebar(active = "") {
   const sidebarLinks = [
     ["Dashboard", "/pages/dashboard.html"],
     ["My trips", "/pages/trips.html"],
-    ["Discover journeys", "/pages/trips.html?catalog=1"],
     ["Trip album", "/pages/album.html"],
     ["Favorites", "/pages/favourites.html"],
     ["Compare", "/pages/compare.html"],
@@ -478,7 +478,6 @@ export function mountAdminSidebar(active = "") {
     ["Interests", "/pages/admin-interests.html"],
     ["Complaints", "/pages/admin-complaints.html"],
     ["Reviews", "/pages/admin-reviews.html"],
-    ["Revenue", "/pages/admin-revenue.html"],
     ["Site settings", "/pages/admin-settings.html"]
   ];
   const content = `<aside class="sidebar admin-sidebar"><a class="admin-brand" data-site-brand="admin" href="/pages/admin.html">${siteBrandMarkup(true)}</a><p>ADMINISTRATION</p>${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}<button class="admin-logout" type="button" data-admin-logout>Log out</button></aside>`;

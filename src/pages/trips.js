@@ -22,9 +22,12 @@ try {
   target.innerHTML = trips.length ? trips.map(trip => {
     const id = trip.trip_id || trip.trip?.id || trip.template_trip_id || trip.id;
     const itineraryLink = catalogView && id ? ' <a class="button subtle" href="/pages/trip-details?id=' + id + '">View itinerary</a>' : "";
+    const reviewBtn = (memberView && id)
+      ? ` <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(trip.destination || trip.name || "Trip")}">Write a review</a>`
+      : "";
     const action = memberView
       ? id
-        ? `<a class="button subtle" href="/pages/trip-details?id=${id}">View itinerary</a>`
+        ? `<a class="button subtle" href="/pages/trip-details?id=${id}">View itinerary</a>${reviewBtn}`
         : '<span class="muted">This trip is missing its itinerary reference.</span>'
       : session.isLoggedIn() && id
         ? `<button class="button" type="button" data-book-trip="${escapeHtml(id)}">Add to my trips</button>${itineraryLink}`

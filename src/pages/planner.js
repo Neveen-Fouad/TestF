@@ -2,7 +2,7 @@ import { api, session } from "../shared/api.js";
 import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
 import { constrainFutureDate } from "../shared/forms.js";
 
-mountNavigation("plan-a-trip");
+mountNavigation("plan-my-trip");
 document.querySelector(".planner-hero .eyebrow").textContent = "PERSONAL TRIP PLANNING";
 document.querySelector(".planner-hero h1 + p").textContent = "Share the essentials and Journovo will build a personalized itinerary. Administrators can use the separate manual trip creator.";
 const plannerForm = document.querySelector("#plan");

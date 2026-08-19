@@ -14,25 +14,30 @@
         <div>
           <p class="eyebrow">ADMINISTRATION</p>
           <h1>Live travel inventory</h1>
-          <p>External hotel, restaurant, and flight results load automatically.</p>
+          <p>Browse live external hotel, restaurant, and flight data on demand.</p>
         </div>
-        <button class="button subtle" id="refresh-inventory" type="button">Refresh all</button>
+        <button class="button subtle" id="refresh-inventory" type="button">Refresh category</button>
       </header>
       <div id="inventory-warning" class="admin-warning" hidden></div>
 
-      <section class="admin-inventory-section" aria-labelledby="admin-hotels-title">
-        <div class="admin-section-heading"><div><h2 id="admin-hotels-title">Hotels</h2><p>Cairo, Alexandria, Istanbul, Dubai, and Paris · next available stay</p></div><strong id="hotel-count">0</strong></div>
-        <div id="admin-hotels" class="results"><div class="empty">Loading available hotels…</div></div>
-      </section>
+      <nav class="inventory-tabs" aria-label="Inventory categories">
+        <button class="tab-button active" type="button" data-tab="hotels">🏨 Hotels</button>
+        <button class="tab-button" type="button" data-tab="restaurants">🍽️ Restaurants</button>
+        <button class="tab-button" type="button" data-tab="flights">✈️ Flights</button>
+      </nav>
 
-      <section class="admin-inventory-section" aria-labelledby="admin-restaurants-title">
-        <div class="admin-section-heading"><div><h2 id="admin-restaurants-title">Restaurants</h2><p>Cairo, Alexandria, Istanbul, Dubai, and Paris</p></div><strong id="restaurant-count">0</strong></div>
-        <div id="admin-restaurants" class="results"><div class="empty">Loading available restaurants…</div></div>
-      </section>
-
-      <section class="admin-inventory-section" aria-labelledby="admin-flights-title">
-        <div class="admin-section-heading"><div><h2 id="admin-flights-title">Flights</h2><p>Cairo to Istanbul, Dubai, Paris, and London · next available departure</p></div><strong id="flight-count">0</strong></div>
-        <div id="admin-flights" class="results"><div class="empty">Loading available flights…</div></div>
+      <section class="admin-inventory-section">
+        <div class="admin-section-heading">
+          <div>
+            <h2 id="category-title">Hotels</h2>
+            <p id="category-subtitle">Cairo, Alexandria, Istanbul, Dubai, and Paris · next available stay</p>
+          </div>
+          <strong id="inventory-count">0</strong>
+        </div>
+        <div id="inventory-results" class="results">
+          <div class="empty">Loading inventory…</div>
+        </div>
+        <div id="pagination-controls" class="pagination-controls"></div>
       </section>
     </section>
   </main>

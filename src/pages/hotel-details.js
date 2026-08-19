@@ -1,4 +1,4 @@
-import { api } from "../shared/api.js";
+import { api, rows } from "../shared/api.js";
 import { getHotelId } from "../shared/hotels.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
 import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
@@ -27,6 +27,30 @@ if (!hotel) {
   const bookingAction = hotelId
     ? `<a class="button" href="/pages/hotel-booking.html?id=${encodeURIComponent(hotelId)}">Book this hotel</a>`
     : '<span class="muted">Booking is unavailable because this hotel has no valid provider ID.</span>';
-  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions">${bookingAction}${hotelId ? ` <a class="button subtle" href="/pages/reviews.html?type=hotel&id=${encodeURIComponent(hotelId)}&name=${encodeURIComponent(name)}">Write a review</a>` : ""}${favouriteControl(hotelId, "hotel")}</div>`;
+  target.innerHTML = `<p class="eyebrow">HOTEL DETAILS</p><h1>${escapeHtml(name)}</h1><p class="lead">${escapeHtml(address)}</p><p>Rating: ${escapeHtml(rating)}</p><p>${escapeHtml(price)}</p><div class="detail-actions">${bookingAction} ${favouriteControl(hotelId, "hotel")}</div>`;
   bindFavouriteControls(target);
+
+  const reviewsTarget = document.querySelector("#hotel-reviews");
+  if (reviewsTarget && hotelId) {
+    reviewsTarget.innerHTML = '<div class="empty">Loading reviews…</div>';
+    try {
+      const reviews = rows(await api.reviews.list(1, { type: 'hotel', reviewable_id: hotelId }));
+      if (reviews.length > 0) {
+        reviewsTarget.innerHTML = `<h3>Traveler Reviews</h3><div class="reviews-list" style="margin-top: 1rem;">` +
+          reviews.map(r => {
+            const reviewerName = r.client?.name || r.client?.first_name || "Guest";
+            const date = new Date(r.created_at).toLocaleDateString();
+            return `<article style="padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+              <p><strong>${escapeHtml(reviewerName)}</strong> <span class="muted" style="margin-left: 0.5rem;">${date}</span></p>
+              <p style="color: var(--primary);">★ ${escapeHtml(String(r.rating || 5))}/5</p>
+              <p style="margin-top: 0.5rem;">${escapeHtml(r.comment || "")}</p>
+            </article>`;
+          }).join("") + `</div>`;
+      } else {
+        reviewsTarget.innerHTML = '<div class="empty">No reviews yet for this hotel. Be the first to write one!</div>';
+      }
+    } catch (e) {
+      reviewsTarget.innerHTML = '<div class="empty is-error">Could not load reviews at this time.</div>';
+    }
+  }
 }

@@ -11,7 +11,7 @@
     <div data-admin-sidebar></div>
     <section>
       <p class="eyebrow">ADMINISTRATION</p><h1>Client bookings</h1><p class="admin-lead">Review hotel and flight bookings for a specific client.</p>
-      <form id="admin-bookings-form" class="panel toolbar"><div class="field"><label>Client ID</label><input name="client_id" type="number" min="1" list="client-options" required><datalist id="client-options"></datalist></div><div class="field"><label>Booking type</label><select name="type"><option value="all">All bookings</option><option value="hotels">Hotels only</option><option value="flights">Flights only</option></select></div><button class="button">View bookings</button></form>
+      <form id="admin-bookings-form" class="panel toolbar"><div class="field"><label>Client</label><select name="client_id" id="client-options" required><option value="" disabled selected>Loading clients...</option></select></div><div class="field"><label>Booking type</label><select name="type"><option value="all">All bookings</option><option value="hotels">Hotels only</option><option value="flights">Flights only</option><option value="trips">Trips only</option></select></div><button class="button">View bookings</button></form>
       <div id="admin-content" class="results"><div class="empty">Enter a client ID to view bookings.</div></div>
     </section>
   </main>

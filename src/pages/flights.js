@@ -6,6 +6,9 @@ import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js
 mountNavigation("flights");
 const target = document.querySelector("#flights");
 const form = document.querySelector("#flight-search");
+const PAGE_SIZE = 10;
+let flights = [];
+let currentPage = 1;
 constrainFutureDate(form.elements.date);
 
 function focusResults() {
@@ -62,25 +65,40 @@ async function searchFlights() {
       return;
     }
     sessionStorage.setItem("journovo_flight_search", JSON.stringify({ ...values, origin_query: form.elements.origin_query.value, destination_query: form.elements.destination_query.value }));
-    const items = rows(await api.flights.search(values));
-    target.innerHTML = items.length ? `${items.map((item, index) => {
-      const leg = item.legs?.[0] || item;
-      const carrier = leg.carriers?.marketing?.[0]?.name || leg.carriers?.[0]?.name || item.airline || item.name || "Flight option";
-      const route = item.legs?.map(part => `${part.origin?.displayCode || part.origin?.name || ""} → ${part.destination?.displayCode || part.destination?.name || ""}`).join(" · ") || `${item.departure || ""} → ${item.arrival || ""}`;
-      const price = item.price?.formatted || item.price?.amount || item.price?.raw || item.price || "Price on request";
-      const id = String(item.id || index);
-      const linkParameters = new URLSearchParams({ id, ...values });
-      return `<article class="result-card"><p class="eyebrow">Flight</p><h3>${escapeHtml(carrier)}</h3><p>${escapeHtml(route)}</p><p>${escapeHtml(price)}</p><a class="button subtle" data-details="${index}" href="/pages/flight-details.html?${escapeHtml(linkParameters.toString())}">View details</a>${favouriteControl(id, "flight")}</article>`;
-    }).join("")}<p class="results-summary" role="status">${items.length} flight option${items.length === 1 ? "" : "s"} found.</p>` : '<div class="empty">No flights matched that route and date. Try a different day or nearby airport.</div>';
-    target.querySelectorAll("[data-details]").forEach(link => link.addEventListener("click", () => {
-      sessionStorage.setItem("journovo_selected_flight", JSON.stringify({ ...items[Number(link.dataset.details)], search: values }));
-    }));
-    bindFavouriteControls(target);
-    focusResults();
+    flights = rows(await api.flights.search(values));
+    currentPage = 1;
+    renderFlights(values);
   } catch (error) {
     showRecoverableState(target, error.message, { action: searchFlights });
     notify(error.message, true);
   }
+}
+
+function renderFlights(values) {
+    const pages = Math.ceil(flights.length / PAGE_SIZE);
+    currentPage = Math.min(currentPage, pages || 1);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const items = flights.slice(start, start + PAGE_SIZE);
+    const pagination = flights.length > PAGE_SIZE ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage === 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${pages}</span><button class="button subtle" type="button" data-page="next" ${currentPage === pages ? "disabled" : ""}>Next →</button></div>` : "";
+    target.innerHTML = flights.length ? `${items.map((item, index) => {
+      const leg = item.legs?.[0] || item;
+      const carrier = leg.carriers?.marketing?.[0]?.name || leg.carriers?.[0]?.name || item.airline || item.name || "Flight option";
+      const route = item.legs?.map(part => `${part.origin?.displayCode || part.origin?.name || ""} → ${part.destination?.displayCode || part.destination?.name || ""}`).join(" · ") || `${item.departure || ""} → ${item.arrival || ""}`;
+      const price = item.price?.formatted || item.price?.amount || item.price?.raw || item.price || "Price on request";
+      const id = String(item.id || start + index);
+      const linkParameters = new URLSearchParams({ id, ...values });
+      return `<article class="result-card"><p class="eyebrow">Flight</p><h3>${escapeHtml(carrier)}</h3><p>${escapeHtml(route)}</p><p>${escapeHtml(price)}</p><a class="button subtle" data-details="${start + index}" href="/pages/flight-details.html?${escapeHtml(linkParameters.toString())}">View details</a>${favouriteControl(id, "flight")}</article>`;
+    }).join("")}<p class="results-summary" role="status">${flights.length} flight option${flights.length === 1 ? "" : "s"} found.</p>${pagination}` : '<div class="empty">No flights matched that route and date. Try a different day or nearby airport.</div>';
+    target.querySelectorAll("[data-details]").forEach(link => link.addEventListener("click", () => {
+      sessionStorage.setItem("journovo_selected_flight", JSON.stringify({ ...flights[Number(link.dataset.details)], search: values }));
+    }));
+    bindFavouriteControls(target);
+    focusResults();
+    target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+      currentPage += button.dataset.page === "prev" ? -1 : 1;
+      renderFlights(values);
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
 }
 
 form.addEventListener("submit", event => {

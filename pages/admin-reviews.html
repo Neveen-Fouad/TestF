@@ -1,1 +1,36 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Manage reviews | Journovo</title><link rel="stylesheet" href="/src/pages/admin.css"></head><body data-admin-page="reviews"><main class="page split admin-shell"><div data-admin-sidebar></div><section><p class="eyebrow">ADMINISTRATION</p><h1>Manage reviews</h1><div id="admin-content" class="results"><div class="empty">Loading reviews…</div></div></section></main><script src="/config.js"></script><script type="module" src="/src/pages/admin.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Manage reviews | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/admin.css">
+</head>
+<body data-admin-page="reviews">
+  <main class="page split admin-shell">
+    <div data-admin-sidebar></div>
+    <section class="admin-main">
+      <header class="admin-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRATION</p>
+          <h1>Manage reviews</h1>
+          <p>Moderate, approve, or reject user reviews across the platform.</p>
+        </div>
+      </header>
+
+      <nav class="inventory-tabs" id="review-status-tabs" aria-label="Review status filter">
+        <button class="tab-button active" type="button" data-status="">All reviews</button>
+        <button class="tab-button" type="button" data-status="pending">⏳ Pending</button>
+        <button class="tab-button" type="button" data-status="approved">✓ Approved</button>
+        <button class="tab-button" type="button" data-status="rejected">✕ Rejected</button>
+      </nav>
+
+      <div id="admin-content" class="results">
+        <div class="empty">Loading reviews…</div>
+      </div>
+    </section>
+  </main>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/admin.js"></script>
+</body>
+</html>

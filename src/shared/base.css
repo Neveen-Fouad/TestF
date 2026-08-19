@@ -229,6 +229,7 @@ textarea:focus-visible {
 
 /* Page layout and typography */
 .page { width: min(1180px, 100%); margin: auto; padding: clamp(38px, 6vw, 68px) 24px; }
+.pagination-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; grid-column: 1 / -1; padding: 14px 2px 0; color: var(--muted); font-size: 13px; font-weight: 700; }
 .page > h1,
 .page section > h1,
 .search-page > h1 {

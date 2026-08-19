@@ -199,7 +199,7 @@ export const api = {
     book: id => request(`/trips/${encodeURIComponent(id)}/book`, { method: "POST" })
   },
   memories: { list: tripId => request(`/trips/${tripId}/memories`), create: (tripId, form) => request(`/trips/${tripId}/memories`, { method: "POST", body: form, form: true }), remove: (tripId, memoryId) => request(`/trips/${tripId}/memories/${memoryId}`, { method: "DELETE" }) },
-  favourites: { list: () => request("/favourites"), add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }), remove: id => request(`/favourites/${id}`, { method: "DELETE" }) },
+  favourites: { list: (page = 1) => request(`/favourites?${query({ page })}`), add: (id, type) => request("/favourites", { method: "POST", body: { favouriteable_id: String(id), type } }), remove: id => request(`/favourites/${id}`, { method: "DELETE" }) },
   dashboard: {
     bookings: () => request("/bookings"),
     savedTrips: () => request("/dashboard/saved-trips"),
@@ -212,8 +212,8 @@ export const api = {
   interests: { mine: () => request("/client/interests"), update: interests => request("/client/interests", { method: "PUT", body: { interests } }) },
   profile: { get: () => request("/profile"), update: body => request("/profile", { method: "PATCH", body }), password: body => request("/profile/password", { method: "PATCH", body }) },
   reviews: {
-    list: (filters = {}) => request(`/reviews?${query(filters)}`),
-    mine: () => request("/reviews/my"),
+    list: (page = 1, filters = {}) => request(`/reviews?${query({ ...filters, page })}`),
+    mine: (page = 1) => request(`/reviews/my?page=${encodeURIComponent(page)}`),
     create: form => request("/reviews", { method: "POST", body: form, form: form instanceof FormData }),
     update: (id, form) => request(`/reviews/${encodeURIComponent(id)}`, { method: "POST", body: form, form: form instanceof FormData }),
     remove: id => request(`/reviews/${encodeURIComponent(id)}`, { method: "DELETE" })
@@ -230,7 +230,7 @@ export const api = {
   admin: {
     users: () => request("/admin/users"),
     userStatus: (id, is_active) => request(`/admin/users/${id}/status`, { method: "PATCH", body: { is_active } }),
-    reviews: () => request("/admin/reviews"),
+    reviews: (page = 1, filters = {}) => request(`/admin/reviews?${query({ ...filters, page })}`),
     reviewDecision: (id, decision) => request(`/admin/reviews/${id}/${decision}`, { method: "POST" }),
     messages: () => request("/admin/contact-messages"),
     messageStatus: (id, status) => request(`/admin/contact-messages/${id}/status`, { method: "PATCH", body: { status } }),

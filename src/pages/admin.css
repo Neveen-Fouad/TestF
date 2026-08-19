@@ -1,6 +1,7 @@
 @import "../shared/base.css";
 
 body[data-admin-page]{background:#f3f7fc}
+.pagination-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:14px 2px 0;color:var(--muted);font-size:13px;font-weight:700}
 body[data-admin-page]>.topbar,body[data-admin-page]>[data-navigation]{display:none}
 body[data-admin-page] .page.split,.admin-shell{grid-template-columns:250px minmax(0,1fr);max-width:1440px;min-height:100vh;padding:0;gap:0}
 .admin-main,body[data-admin-page] .page.split>section{min-width:0;padding:46px clamp(24px,4vw,58px)}
@@ -46,7 +47,7 @@ body[data-admin-page] .page.split,.admin-shell{grid-template-columns:250px minma
 .daily-detail-heading h3{margin:0;color:var(--navy);font:700 20px Georgia,serif}
 .daily-detail .field:last-child{grid-column:1/-1}
 .daily-detail textarea{min-height:110px;resize:vertical}
-.admin-inventory-section{margin-top:34px;padding-top:10px}
+.admin-inventory-section{margin-top:24px;padding-top:10px}
 .admin-inventory-section>h2{margin:0 0 14px;color:var(--navy);font:700 27px Georgia,serif}
 .admin-inventory-section .results{display:grid;gap:14px;margin-top:16px}
 .admin-inventory-section .result-card{margin:0}
@@ -55,6 +56,11 @@ body[data-admin-page] .page.split,.admin-shell{grid-template-columns:250px minma
 .admin-section-heading h2{margin:0;color:var(--navy);font:700 27px Georgia,serif}
 .admin-section-heading p{margin:5px 0 0;color:var(--muted);font-size:13px}
 .admin-section-heading>strong{display:grid;min-width:48px;height:48px;place-items:center;border-radius:14px;background:#e7f2ff;color:#0e6ed9;font-size:18px}
+
+.inventory-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 24px}
+.inventory-tabs .tab-button{padding:10px 22px;border:1px solid #cbdced;border-radius:12px;background:#fff;color:var(--navy);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s ease}
+.inventory-tabs .tab-button:hover{border-color:#0e6ed9;background:#f0f6fc}
+.inventory-tabs .tab-button.active{border-color:#0e6ed9;background:#0e6ed9;color:#fff;box-shadow:0 4px 14px rgba(14,110,217,.25)}
 
 @media(max-width:1050px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-heading{flex-direction:column}.admin-period{justify-content:flex-start}}
 @media(max-width:780px){body[data-admin-page] .page.split,.admin-shell{grid-template-columns:1fr}.admin-sidebar{position:static;min-height:auto}.admin-sidebar:not(.open){display:none}.admin-sidebar a{display:block}.admin-logout{margin-top:20px}.admin-main,body[data-admin-page] .page.split>section{padding:30px 18px}.admin-charts,.admin-metrics,.form-grid{grid-template-columns:1fr}.admin-chart-card:first-child{grid-column:auto}.admin-period{width:100%}.admin-period label{flex:1}.admin-period select,.admin-period input{width:100%}}

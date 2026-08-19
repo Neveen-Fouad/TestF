@@ -9,7 +9,6 @@ async function load() {
   const target = document.querySelector("#admin-content");
   try {
     if (page === "dashboard") { await loadDashboard(target); return; }
-    if (page === "revenue") { const payload = await api.admin.revenue(); target.innerHTML = stats(payload?.data || payload); return; }
     if (page === "bookings") { await loadAdminBookings(target); return; }
     if (page === "trips") {
       const trips = rows(await api.trips.list());
@@ -73,9 +72,60 @@ async function load() {
     }
     if (page === "complaints") { await loadComplaints(target); return; }
     if (page === "reviews") {
-      const reviews = rows(await api.admin.reviews());
-      target.innerHTML = cards(reviews, item => `<h3>${escapeHtml(item.title || `${item.type || "Traveler"} review`)}</h3><p>${escapeHtml(item.description || item.comment || item.content || "No review text was provided.")}</p><button class="button" data-decision="approve" data-id="${escapeHtml(item.id)}">Approve</button> <button class="button subtle" data-decision="reject" data-id="${escapeHtml(item.id)}">Reject</button>`);
-      target.querySelectorAll("[data-decision]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.reviewDecision(button.dataset.id, button.dataset.decision); button.closest("article").remove(); } catch (error) { notify(error.message, true); } }));
+      let currentPage = 1;
+      let activeStatus = "";
+
+      const statusTabs = document.querySelectorAll("#review-status-tabs [data-status]");
+      statusTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          activeStatus = tab.dataset.status;
+          currentPage = 1;
+          statusTabs.forEach(t => t.classList.toggle("active", t.dataset.status === activeStatus));
+          loadReviews();
+        });
+      });
+
+      const loadReviews = async () => {
+        target.innerHTML = '<div class="empty">Loading reviews…</div>';
+        const filters = activeStatus ? { status: activeStatus } : {};
+        const payload = await api.admin.reviews(currentPage, filters);
+        const reviews = rows(payload);
+        const pagination = payload?.data?.current_page ? payload.data : (payload?.current_page ? payload : {});
+        currentPage = Number(pagination.current_page) || currentPage;
+        const lastPage = Number(pagination.last_page) || 1;
+        const total = pagination.total != null ? pagination.total : reviews.length;
+
+        const controls = lastPage > 1 ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${lastPage} (${total} reviews)</span><button class="button subtle" type="button" data-page="next" ${currentPage >= lastPage ? "disabled" : ""}>Next →</button></div>` : "";
+
+        target.innerHTML = reviews.length ? cards(reviews, item => {
+          const status = String(item.status || "pending").toLowerCase();
+          const statusBadge = status === "approved"
+            ? '<span style="display: inline-block; padding: 2px 8px; border-radius: 6px; background: #e6f4ea; color: #137333; font-size: 11px; font-weight: 800; text-transform: uppercase;">Approved</span>'
+            : (status === "rejected"
+              ? '<span style="display: inline-block; padding: 2px 8px; border-radius: 6px; background: #fce8e6; color: #c5221f; font-size: 11px; font-weight: 800; text-transform: uppercase;">Rejected</span>'
+              : '<span style="display: inline-block; padding: 2px 8px; border-radius: 6px; background: #fef7e0; color: #b06000; font-size: 11px; font-weight: 800; text-transform: uppercase;">Pending</span>');
+
+          return `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><p class="eyebrow" style="margin:0">${escapeHtml((item.type || "review").toUpperCase())} #${escapeHtml(item.id)}</p>${statusBadge}</div><h3>${escapeHtml(item.title || `${item.type ? item.type[0].toUpperCase() + item.type.slice(1) : "Traveler"} review`)}</h3><p style="color: var(--primary); font-weight: 700; margin: 4px 0 8px;">★ ${escapeHtml(String(item.rating || "—"))}/5</p><p>${escapeHtml(item.description || item.comment || item.content || "No review text was provided.")}</p><div class="detail-actions" style="margin-top: 14px;">${status !== "approved" ? `<button class="button" data-decision="approve" data-id="${escapeHtml(item.id)}">Approve</button>` : ""}${status !== "rejected" ? ` <button class="button subtle" data-decision="reject" data-id="${escapeHtml(item.id)}">Reject</button>` : ""}</div>`;
+        }) + controls : `<div class="empty">No ${activeStatus ? activeStatus : ""} reviews found.</div>`;
+
+        target.querySelectorAll("[data-decision]").forEach(button => button.addEventListener("click", async () => {
+          try {
+            await api.admin.reviewDecision(button.dataset.id, button.dataset.decision);
+            notify(`Review ${button.dataset.decision}d.`);
+            await loadReviews();
+          } catch (error) {
+            notify(error.message, true);
+          }
+        }));
+
+        target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+          currentPage += button.dataset.page === "prev" ? -1 : 1;
+          loadReviews();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }));
+      };
+
+      await loadReviews();
       return;
     }
     if (page === "site-settings") {
@@ -261,22 +311,29 @@ async function loadAdminBookings(target) {
   const form = document.querySelector("#admin-bookings-form");
   const render = async () => {
     const clientId = form.elements.client_id.value.trim();
-    if (!clientId) { target.innerHTML = '<div class="empty">Enter a client ID to view that client’s bookings.</div>'; return; }
-    const source = form.elements.type.value === "hotels" ? api.admin.bookings.hotels : form.elements.type.value === "flights" ? api.admin.bookings.flights : api.admin.bookings.all;
+    if (!clientId) { target.innerHTML = '<div class="empty">Select a client to view their bookings.</div>'; return; }
+    const bookingType = form.elements.type.value;
+    const source = bookingType === "hotels" ? api.admin.bookings.hotels : bookingType === "flights" ? api.admin.bookings.flights : api.admin.bookings.all;
     const bookings = rows(await source(clientId));
-    target.innerHTML = bookings.length ? cards(bookings, item => `<p class="eyebrow">${escapeHtml(item.status || item.type || "BOOKING")}</p><h3>${escapeHtml(item.details?.hotel_name || item.details?.airline || item.provider_name || item.name || "Booking")}</h3><p>${escapeHtml(item.check_in_date || item.booking_date || item.created_at || "")}</p><p>${escapeHtml(item.total_price != null ? `${item.currency || "USD"} ${item.total_price}` : "Price unavailable")}</p>`) : '<div class="empty">No bookings found for this client.</div>';
+    const shownBookings = bookingType === "trips" ? bookings.filter(booking => booking.type === "trip") : bookings;
+    target.innerHTML = shownBookings.length ? cards(shownBookings, item => `<p class="eyebrow">${escapeHtml(item.status || item.type || "BOOKING")}</p><h3>${escapeHtml(item.details?.hotel_name || item.details?.airline || item.details?.destination || item.provider_name || item.name || "Booking")}</h3><p>${escapeHtml(item.check_in_date || item.booking_date || item.created_at || "")}</p><p>${escapeHtml(item.total_price != null ? `${item.currency || "USD"} ${item.total_price}` : "Price unavailable")}</p>`) : '<div class="empty">No bookings found for this client.</div>';
   };
   if (!form.dataset.ready) {
     form.dataset.ready = "true";
     form.addEventListener("submit", event => { event.preventDefault(); render().catch(error => { target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }); });
     try {
       const users = rows(await api.admin.users());
-      document.querySelector("#client-options").innerHTML = users.map(user => {
-        const clientId = user.client_id || user.client?.id;
+      const clients = users.map(user => {
+        const clientId = user.client_id || user.client?.id || (user.role === "user" ? user.id : null);
         const name = user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email || "Client";
         return clientId ? `<option value="${escapeHtml(clientId)}">${escapeHtml(name)} — client #${escapeHtml(clientId)}</option>` : "";
-      }).join("");
-    } catch {}
+      }).filter(Boolean);
+      document.querySelector("#client-options").innerHTML = clients.length
+        ? '<option value="" disabled selected>Select a client...</option>' + clients.join("")
+        : '<option value="" disabled selected>No clients are available.</option>';
+    } catch {
+      document.querySelector("#client-options").innerHTML = '<option value="" disabled selected>Clients could not be loaded.</option>';
+    }
   }
   await render();
 }

@@ -28,6 +28,7 @@ async function loadTrip() {
     renderTrip();
     if (embeddedDays.length) renderDays(embeddedDays);
     await loadItinerary(embeddedDays);
+    await loadTripReviews();
   } catch (error) {
     tripTarget.innerHTML = `<div class="empty is-error">${escapeHtml(error.message)}</div>`;
     daysTarget.innerHTML = "";
@@ -180,9 +181,10 @@ function canManageTrip(candidate) {
 function renderTrip() {
   tripTarget.hidden = false;
   const destination = trip.destination || "Trip itinerary";
-  const standardActions = `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a> <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a>`;
+  const standardActions = `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a>`;
+  const reviewAction = ` <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a>`;
   const managementActions = canManageTrip(trip) ? ` <button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>` : "";
-  const actions = `${standardActions}${managementActions}`;
+  const actions = `${standardActions}${reviewAction}${managementActions}`;
   tripTarget.innerHTML = `<div class="panel-heading"><div><div class="eyebrow">YOUR JOURNEY</div><h1>${escapeHtml(destination)}</h1><p class="trip-overview">${escapeHtml(trip.style || "Your live itinerary from Journovo.")} · ${escapeHtml(trip.number_of_days || "—")} days · ${escapeHtml(trip.number_of_travels || "—")} travellers · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated cost</p></div><div class="detail-actions">${actions}</div></div>`;
   tripTarget.querySelector("[data-edit]")?.addEventListener("click", () => {
     for (const key of ["destination", "classes", "number_of_travels", "budget", "estimated_expenses", "number_of_days", "start_date", "style"]) form.elements[key].value = key === "start_date" ? String(trip[key] || "").slice(0, 10) : trip[key] ?? "";
@@ -194,4 +196,30 @@ function renderTrip() {
     try { await api.trips.remove(id); location.assign("/pages/dashboard.html"); }
     catch (error) { notify(error.message, true); }
   });
+}
+
+async function loadTripReviews() {
+  const reviewsTarget = document.querySelector("#trip-reviews");
+  if (!reviewsTarget || !id) return;
+  reviewsTarget.innerHTML = '<div class="empty">Loading reviews…</div>';
+  try {
+    const payload = await api.reviews.list(1, { type: "trip", reviewable_id: id });
+    const reviews = rows(payload);
+    if (reviews.length > 0) {
+      reviewsTarget.innerHTML = `<h3>Traveler Reviews</h3><div class="reviews-list" style="margin-top: 1rem; display: grid; gap: 1rem;">` +
+        reviews.map(r => {
+          const reviewerName = r.client?.name || r.client?.first_name || "Traveler";
+          const date = r.created_at ? new Date(r.created_at).toLocaleDateString() : "";
+          return `<article style="padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;">
+            <p><strong>${escapeHtml(reviewerName)}</strong> ${date ? `<span class="muted" style="margin-left: 0.5rem;">${date}</span>` : ""}</p>
+            <p style="color: var(--primary); font-weight: 700;">★ ${escapeHtml(String(r.rating || 5))}/5</p>
+            <p style="margin-top: 0.5rem;">${escapeHtml(r.description || r.comment || "")}</p>
+          </article>`;
+        }).join("") + `</div>`;
+    } else {
+      reviewsTarget.innerHTML = '<div class="empty">No reviews yet for this trip. Be the first to write one!</div>';
+    }
+  } catch (e) {
+    reviewsTarget.innerHTML = '<div class="empty is-error">Could not load reviews at this time.</div>';
+  }
 }
