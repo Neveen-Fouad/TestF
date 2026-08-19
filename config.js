@@ -1,4 +1,4 @@
-const isProduction = true; // Set to true for production, false for development
+const isProduction = false; // Set to true for production, false for development
 
 let defaultApiUrl;
 

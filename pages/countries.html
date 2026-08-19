@@ -33,12 +33,31 @@
         </div>
         <button class="button">Show attractions</button>
       </form>
+      <div id="city-pills" class="city-pills" hidden></div>
       <section id="weather" class="panel weather-panel" hidden></section>
-      <div
-        id="attraction-map"
-        class="map"
-        aria-label="Map of attraction locations"
-      ></div>
+      <div id="transit-toolbar" class="transit-toolbar" hidden>
+        <div class="transit-info">
+          <span class="transit-icon">🧭</span>
+          <div>
+            <div class="transit-title">Transportation & Travel Times</div>
+            <div id="transit-origin-label" class="transit-subtitle">Calculated from City Center</div>
+          </div>
+        </div>
+        <div class="transit-actions">
+          <button type="button" id="btn-origin-city" class="transit-btn is-active">City Center</button>
+          <button type="button" id="btn-origin-gps" class="transit-btn">📍 My Location</button>
+        </div>
+      </div>
+      <div class="map-wrapper">
+        <div
+          id="attraction-map"
+          class="map"
+          aria-label="Map of attraction locations"
+        ></div>
+        <div id="map-meta-badge" class="map-meta-badge" hidden>
+          <span id="map-meta-count">0</span> attractions mapped
+        </div>
+      </div>
       <div id="attractions" class="results">
         <div class="empty">Select a country to load attraction locations.</div>
       </div>
