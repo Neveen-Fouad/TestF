@@ -8,14 +8,14 @@ mountNavigation("hotels");
 const target = document.querySelector("#hotels");
 const form = document.querySelector("#search");
 const count = document.querySelector("#compare-count");
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 9;
 let hotels = [];
 let currentPage = 1;
 const selected = () => JSON.parse(sessionStorage.getItem("journovo_compare_hotels") || "[]");
 const hotelKey = hotel => getHotelId(hotel) || String(hotel.name || hotel.hotel_name || "");
 const save = hotels => {
   sessionStorage.setItem("journovo_compare_hotels", JSON.stringify(hotels));
-  count.textContent = String(hotels.length);
+  if (count) count.textContent = String(hotels.length);
 };
 
 save(selected());
@@ -24,6 +24,56 @@ constrainDateRange(form, "check_in", "check_out");
 function focusResults() {
   target.tabIndex = -1;
   target.focus({ preventScroll: true });
+}
+
+function extractHotelData(hotel) {
+  const name = hotel.name || hotel.hotel_name || hotel.property?.name || "Hotel";
+  const id = getHotelId(hotel);
+  const media = hotel.mediaSection?.media || hotel.images || [];
+  const image = media[0]?.url || hotel.propertyImage?.image?.url || hotel.image || hotel.thumbnail || "";
+  const rating = hotel.guestRating?.rating || hotel.rating || hotel.review_score || hotel.property?.reviewScore || null;
+  const totalReviews = hotel.guestRating?.totalReviews || hotel.reviews_count || hotel.total_reviews || null;
+  const starRating = hotel.guestRating?.starRating || null;
+
+  const priceObj = typeof hotel.price === "object" ? hotel.price : null;
+  const displayPrice = priceObj?.priceSummary?.definition?.displayPrice ||
+    priceObj?.priceSummary?.displayPrices?.find(p => p.role === "LEAD")?.price?.formatted ||
+    (typeof hotel.price === "string" ? hotel.price : null) ||
+    hotel.price_per_night ||
+    hotel.priceBreakdown?.grossPrice?.value ||
+    "Price on request";
+
+  const strikeOut = priceObj?.priceSummary?.definition?.strikeOut ||
+    priceObj?.priceSummary?.displayPrices?.find(p => p.role === "STRIKEOUT")?.price?.formatted ||
+    "";
+
+  const discountBadge = priceObj?.badge?.text || priceObj?.standardBadge?.text || "";
+  const nightlyRate = priceObj?.priceSummary?.displayPrices?.find(p => p.value?.includes("night"))?.value || "";
+  const periodText = priceObj?.priceSummary?.displayPrices?.find(p => p.value?.includes("for ") || p.value?.includes("nights"))?.value || "";
+
+  const messages = Array.isArray(hotel.messages) ? hotel.messages : [];
+  const location = hotel.address || hotel.city || hotel.property?.address || (messages.length ? messages[messages.length - 1] : "");
+  const roomType = messages.length > 1 ? messages[0] : "";
+  const capacity = messages.length > 2 ? messages[1] : "";
+  const amenities = Array.isArray(hotel.short_amenities) ? hotel.short_amenities : (Array.isArray(hotel.amenities) ? hotel.amenities : []);
+
+  return {
+    name,
+    id,
+    image,
+    rating,
+    totalReviews,
+    starRating,
+    displayPrice,
+    strikeOut,
+    discountBadge,
+    nightlyRate,
+    periodText,
+    location,
+    roomType,
+    capacity,
+    amenities
+  };
 }
 
 function bindHotelActions(hotels) {
@@ -50,7 +100,7 @@ function bindHotelActions(hotels) {
 }
 
 async function runSearch() {
-  target.innerHTML = '<div class="empty">Loading hotels…</div>';
+  target.innerHTML = '<div class="empty">Finding available hotels…</div>';
   const filters = Object.fromEntries(new FormData(form));
   sessionStorage.setItem("journovo_hotel_search", JSON.stringify(filters));
   try {
@@ -63,33 +113,74 @@ async function runSearch() {
 }
 
 function renderHotels(filters) {
-    const pages = Math.ceil(hotels.length / PAGE_SIZE);
-    currentPage = Math.min(currentPage, pages || 1);
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageHotels = hotels.slice(start, start + PAGE_SIZE);
-    const selectedKeys = new Set(selected().map(hotelKey));
-    const pagination = hotels.length > PAGE_SIZE ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage === 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${pages}</span><button class="button subtle" type="button" data-page="next" ${currentPage === pages ? "disabled" : ""}>Next →</button></div>` : "";
-    target.innerHTML = hotels.length ? `${pageHotels.map((hotel, index) => {
-      const name = hotel.name || hotel.hotel_name || hotel.property?.name || "Hotel";
-      const id = getHotelId(hotel);
-      const price = (typeof hotel.price === "object" ? hotel.price?.priceSummary?.definition?.displayPrice : hotel.price) || hotel.price_per_night || hotel.priceBreakdown?.grossPrice?.value || "Price on request";
-      const rating = hotel.guestRating?.rating || hotel.rating || hotel.review_score || hotel.property?.reviewScore || "—";
-      const address = hotel.address || hotel.city || hotel.property?.address || (hotel.messages?.length ? hotel.messages[hotel.messages.length - 1] : "");
-      const detailsAction = id
-        ? `<a class="button subtle" data-details="${start + index}" href="./hotel-details.html?id=${encodeURIComponent(id)}">View details</a>`
-        : '<span class="muted">Hotel details are unavailable.</span>';
-      const favouriteAction = session.isLoggedIn() && id
-        ? ` <button class="button subtle" type="button" data-favorite="${escapeHtml(id)}">Save</button>`
-        : "";
-      return `<article class="result-card"><p class="eyebrow">Hotel</p><h3>${escapeHtml(name)}</h3><p>${escapeHtml(address)}</p><p>★ ${escapeHtml(rating)} · ${escapeHtml(price)}</p><label><input type="checkbox" data-compare="${start + index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label> ${detailsAction}${favouriteAction}</article>`;
-    }).join("")}<p class="results-summary" role="status">${hotels.length} stay${hotels.length === 1 ? "" : "s"} found for ${escapeHtml(filters.destination)}.</p>${pagination}` : '<div class="empty">No hotels matched those details. Try changing your dates, budget, or destination.</div>';
-    bindHotelActions(hotels);
-    focusResults();
-    target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
-      currentPage += button.dataset.page === "prev" ? -1 : 1;
-      renderHotels(filters);
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }));
+  const pages = Math.ceil(hotels.length / PAGE_SIZE);
+  currentPage = Math.min(currentPage, pages || 1);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageHotels = hotels.slice(start, start + PAGE_SIZE);
+  const selectedKeys = new Set(selected().map(hotelKey));
+  const pagination = hotels.length > PAGE_SIZE ? `
+    <div class="pagination-controls">
+      <button class="button subtle" type="button" data-page="prev" ${currentPage === 1 ? "disabled" : ""}>← Previous</button>
+      <span>Page ${currentPage} of ${pages}</span>
+      <button class="button subtle" type="button" data-page="next" ${currentPage === pages ? "disabled" : ""}>Next →</button>
+    </div>` : "";
+
+  target.innerHTML = hotels.length ? `
+    ${pageHotels.map((hotel, index) => {
+      const data = extractHotelData(hotel);
+      const detailsAction = data.id
+        ? `<a class="button subtle" data-details="${start + index}" href="./hotel-details.html?id=${encodeURIComponent(data.id)}">View details</a>`
+        : '<span class="muted">Details unavailable</span>';
+
+      return `
+        <article class="result-card hotel-card">
+          ${data.image ? `
+            <div class="hotel-image-wrap">
+              <img src="${escapeHtml(data.image)}" alt="${escapeHtml(data.name)}" loading="lazy">
+              ${data.discountBadge ? `<span class="hotel-discount-badge">${escapeHtml(data.discountBadge)}</span>` : ""}
+              ${data.starRating ? `<span class="hotel-star-badge">${escapeHtml(String(data.starRating))}★</span>` : ""}
+            </div>
+          ` : ""}
+          <div class="hotel-content">
+            <div class="hotel-eyebrow-row">
+              <span class="eyebrow">${escapeHtml(data.location || filters.destination || "STAY")}</span>
+              ${data.rating ? `<span class="hotel-rating-pill">★ ${escapeHtml(String(data.rating))}${data.totalReviews ? ` <small>(${escapeHtml(String(data.totalReviews))})</small>` : ""}</span>` : ""}
+            </div>
+            <h3 class="hotel-name">${escapeHtml(data.name)}</h3>
+            ${data.roomType || data.capacity ? `<p class="hotel-room-info">${[data.roomType, data.capacity].filter(Boolean).map(escapeHtml).join(" · ")}</p>` : ""}
+            ${data.amenities.length ? `
+              <div class="hotel-amenities-row">
+                ${data.amenities.slice(0, 2).map(a => `<span class="hotel-amenity-pill">✓ ${escapeHtml(a)}</span>`).join("")}
+              </div>
+            ` : ""}
+            <div class="hotel-price-row">
+              <div class="hotel-price-wrap">
+                ${data.strikeOut ? `<span class="hotel-strike-price">${escapeHtml(data.strikeOut)}</span>` : ""}
+                <b class="hotel-lead-price">${escapeHtml(data.displayPrice)}</b>
+                ${data.nightlyRate ? `<span class="hotel-nightly-rate">· ${escapeHtml(data.nightlyRate)}</span>` : ""}
+              </div>
+              ${data.periodText ? `<span class="hotel-period-text">${escapeHtml(data.periodText)}</span>` : ""}
+            </div>
+            <div class="hotel-actions">
+              <label class="hotel-compare-label"><input type="checkbox" data-compare="${start + index}" ${selectedKeys.has(hotelKey(hotel)) ? "checked" : ""}> Compare</label>
+              ${detailsAction}
+              ${favouriteControl(data.id, "hotel")}
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("")}
+    <p class="results-summary" role="status">${hotels.length} stay${hotels.length === 1 ? "" : "s"} found for ${escapeHtml(filters.destination || "your search")}.</p>
+    ${pagination}
+  ` : '<div class="empty">No hotels matched those details. Try changing your dates, budget, or destination.</div>';
+
+  bindHotelActions(hotels);
+  focusResults();
+  target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+    currentPage += button.dataset.page === "prev" ? -1 : 1;
+    renderHotels(filters);
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
 }
 
 form.addEventListener("submit", event => {

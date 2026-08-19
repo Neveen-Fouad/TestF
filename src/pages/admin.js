@@ -250,7 +250,7 @@ function lineChart(items, title) {
   const x = index => left + index * ((width - left - right) / Math.max(items.length - 1, 1));
   const y = value => top + (height - top - bottom) * (1 - value / max);
   const points = items.map((item, index) => `${x(index)},${y(item.value)}`).join(" ");
-  const labels = items.map((item, index) => `<text x="${x(index)}" y="${height - 14}" text-anchor="middle">${escapeHtml(item.label)}</text><text x="${x(index)}" y="${Math.max(y(item.value) - 10, 14)}" text-anchor="middle" class="chart-value">${escapeHtml(compact(item.value))}</text>`).join("");
+  const labels = items.map((item, index) => `<text x="${x(index)}" y="${height - 14}" text-anchor="middle" class="chart-label">${escapeHtml(item.label)}</text><text x="${x(index)}" y="${Math.max(y(item.value) - 10, 14)}" text-anchor="middle" class="chart-value">${escapeHtml(compact(item.value))}</text>`).join("");
   return `<svg class="admin-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}"><title>${escapeHtml(title)}</title><line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" class="chart-axis"/><polyline points="${points}" class="chart-line"/>${items.map((item, index) => `<circle cx="${x(index)}" cy="${y(item.value)}" r="5" class="chart-point"><title>${escapeHtml(item.label)}: ${escapeHtml(money(item.value))}</title></circle>`).join("")}${labels}</svg>`;
 }
 
@@ -259,7 +259,7 @@ function barChart(items, title, color) {
   if (!shown.length) return '<div class="chart-empty">No chart data was returned.</div>';
   const width = 640, row = 54, left = 135, right = 55, height = shown.length * row + 28;
   const max = Math.max(...shown.map(item => item.value), 1);
-  return `<svg class="admin-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}"><title>${escapeHtml(title)}</title>${shown.map((item, index) => { const y = 16 + index * row; const barWidth = (width - left - right) * item.value / max; return `<text x="${left - 12}" y="${y + 20}" text-anchor="end">${escapeHtml(item.label)}</text><rect x="${left}" y="${y}" width="${Math.max(barWidth, item.value ? 3 : 0)}" height="28" rx="6" fill="${color}"><title>${escapeHtml(item.label)}: ${item.value}</title></rect><text x="${left + barWidth + 9}" y="${y + 20}" class="chart-value">${item.value}</text>`; }).join("")}</svg>`;
+  return `<svg class="admin-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}"><title>${escapeHtml(title)}</title>${shown.map((item, index) => { const y = 16 + index * row; const barWidth = (width - left - right) * item.value / max; return `<text x="${left - 12}" y="${y + 20}" text-anchor="end" class="chart-label">${escapeHtml(item.label)}</text><rect x="${left}" y="${y}" width="${Math.max(barWidth, item.value ? 3 : 0)}" height="28" rx="6" fill="${color}"><title>${escapeHtml(item.label)}: ${item.value}</title></rect><text x="${left + barWidth + 9}" y="${y + 20}" class="chart-value">${item.value}</text>`; }).join("")}</svg>`;
 }
 
 function chartPanel(title, description, chart) { return `<article class="admin-chart-card"><div><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p></div>${chart}</article>`; }

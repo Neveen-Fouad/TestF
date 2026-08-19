@@ -1,1 +1,77 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plan a trip | Journovo</title><link rel="stylesheet" href="/src/pages/planner.css"></head><body><div data-navigation></div><main class="page planner-page"><section class="planner-hero"><div><p class="eyebrow">ADMIN TRIP PLANNING</p><h1>Create a trip plan.</h1><p>This admin-only planner is separate from the Joy chat assistant.</p></div><div class="planner-orbit" aria-hidden="true">✦</div></section><form id="plan" class="panel plan-form"><div class="form-heading"><p class="eyebrow">TRIP DETAILS</p><h2>Where are they going?</h2></div><div class="plan-grid"><div class="field"><label>Destination</label><input name="destination" required placeholder="e.g. Istanbul, Türkiye"></div><div class="field"><label>Travel style</label><select name="style"><option value="cultural">Cultural</option><option value="relaxed">Relaxed</option><option value="adventure">Adventure</option><option value="food">Food & local life</option></select></div><div class="field"><label>Start date</label><input name="start_date" type="date" required></div><div class="field"><label>Number of days</label><input name="number_of_days" type="number" min="1" max="60" value="5" required></div><div class="field"><label>Travellers</label><input name="number_of_travels" type="number" min="1" max="20" value="2" required></div><div class="field"><label>Budget (USD)</label><input name="budget" type="number" min="0" step="1" placeholder="1500" required></div><div class="field"><label>Travel class</label><select name="classes"><option value="economy">Economy</option><option value="premium_economy">Premium economy</option><option value="business">Business</option></select></div><div class="field plan-wide"><label>Preferences <small>(optional)</small></label><textarea name="preferences" rows="4" placeholder="Food preferences, places to skip, or preferred pace…"></textarea></div></div><button class="button">Create trip</button></form><div id="plan-result" aria-live="polite"></div></main><script src="/config.js"></script><script type="module" src="/src/pages/planner.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plan a trip | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/planner.css">
+</head>
+<body>
+  <div data-navigation></div>
+  <main class="page planner-page">
+    <section class="planner-hero">
+      <div>
+        <p class="eyebrow">PERSONAL TRIP PLANNING</p>
+        <h1>Plan your journey.</h1>
+        <p>Share the essential details and Journovo will build a personalized itinerary for your escape.</p>
+      </div>
+      <div class="planner-orbit" aria-hidden="true">✦</div>
+    </section>
+
+    <form id="plan" class="panel plan-form">
+      <div class="form-heading">
+        <p class="eyebrow">TRIP DETAILS</p>
+        <h2>Where are you going?</h2>
+      </div>
+      <div class="plan-grid">
+        <div class="field">
+          <label>Destination</label>
+          <input name="destination" required placeholder="e.g. Cairo, Egypt">
+        </div>
+        <div class="field">
+          <label>Travel style</label>
+          <select name="style" required>
+            <option value="cultural">Cultural</option>
+            <option value="relaxed">Relaxed</option>
+            <option value="adventure">Adventure</option>
+            <option value="food">Food & local life</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Start date</label>
+          <input name="start_date" type="date" required>
+        </div>
+        <div class="field">
+          <label>Number of days</label>
+          <input name="number_of_days" type="number" min="1" max="60" value="5" required>
+        </div>
+        <div class="field">
+          <label>Travellers</label>
+          <input name="number_of_travels" type="number" min="1" max="20" value="2" required>
+        </div>
+        <div class="field">
+          <label>Budget (USD)</label>
+          <input name="budget" type="number" min="100" step="1" placeholder="1000" required>
+        </div>
+        <div class="field">
+          <label>Travel class</label>
+          <select name="classes">
+            <option value="economy">Economy</option>
+            <option value="premium_economy">Premium economy</option>
+            <option value="business">Business</option>
+          </select>
+        </div>
+        <div class="field plan-wide">
+          <label>Preferences <small>(optional)</small></label>
+          <textarea name="preferences" rows="4" placeholder="Food preferences, places to skip, or preferred pace…"></textarea>
+        </div>
+      </div>
+      <button class="button" type="submit">Build my trip plan</button>
+    </form>
+
+    <div id="plan-result" aria-live="polite"></div>
+  </main>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/planner.js"></script>
+</body>
+</html>

@@ -36,16 +36,31 @@ function safeWebUrl(value) {
   }
 }
 
+function resolveAssetUrl(value) {
+  if (!value || typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed) || /^data:image\//i.test(trimmed)) return trimmed;
+
+  const defaultApiUrl = `http://${location.hostname}:8000/api`;
+  const apiBase = (window.JOURNOVO_CONFIG?.API_BASE_URL || defaultApiUrl).replace(/\/$/, "");
+  const backendOrigin = apiBase.replace(/\/api\/?$/i, "");
+  const cleanPath = trimmed.replace(/^\/?storage\//i, "").replace(/^\//, "");
+  return `${backendOrigin}/storage/${cleanPath}`;
+}
+
 function currentSiteName() {
   return String(siteSettings.name || defaultSiteSettings.name).trim() || defaultSiteSettings.name;
 }
 
 function siteBrandMarkup(admin = false) {
   const name = escapeHtml(currentSiteName());
-  const logo = safeWebUrl(siteSettings.logo_url || siteSettings.logoUrl || siteSettings.logo);
+  const rawLogo = siteSettings.logo_url || siteSettings.logoUrl || siteSettings.logo;
+  const logo = resolveAssetUrl(rawLogo);
+  const initial = escapeHtml(currentSiteName().charAt(0).toUpperCase() || "J");
   const mark = logo
-    ? `<img class="brand-logo" src="${escapeHtml(logo)}" alt="${name} logo">`
-    : `<span class="brand-mark" aria-hidden="true">${escapeHtml(currentSiteName().charAt(0).toUpperCase())}</span>`;
+    ? `<span class="brand-mark-wrap"><img class="brand-logo" src="${escapeHtml(logo)}" alt="${name} logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='grid';"><span class="brand-mark" style="display: none;" aria-hidden="true">${initial}</span></span>`
+    : `<span class="brand-mark" aria-hidden="true">${initial}</span>`;
   return `${mark}<span>${name}</span>${admin ? " <span>Admin</span>" : ""}`;
 }
 
@@ -65,6 +80,7 @@ function replaceDefaultBrand(root) {
 }
 
 function mountSiteFooter() {
+  if (document.body.dataset.adminPage) return;
   let footer = document.querySelector("[data-site-settings-footer]");
   if (!footer) {
     footer = document.querySelector("footer.footer") || document.createElement("footer");
@@ -75,12 +91,78 @@ function mountSiteFooter() {
   const phone = String(siteSettings.phone || "").trim();
   const facebook = safeWebUrl(siteSettings.facebook);
   const instagram = safeWebUrl(siteSettings.instagram);
-  const contacts = [
-    phone ? `<a href="tel:${encodeURIComponent(phone)}">${escapeHtml(phone)}</a>` : "",
-    facebook ? `<a href="${escapeHtml(facebook)}" target="_blank" rel="noopener noreferrer">Facebook</a>` : "",
-    instagram ? `<a href="${escapeHtml(instagram)}" target="_blank" rel="noopener noreferrer">Instagram</a>` : ""
-  ].filter(Boolean).join(" <span aria-hidden=\"true\">·</span> ");
-  footer.innerHTML = `<span>© ${new Date().getFullYear()} ${escapeHtml(currentSiteName())}. ${escapeHtml(siteSettings.slogan || defaultSiteSettings.slogan)}</span>${contacts ? `<span class="site-footer-links">${contacts}</span>` : ""}`;
+  const slogan = escapeHtml(siteSettings.slogan || defaultSiteSettings.slogan || "Thoughtful travel planning, curated stays, and unforgettable memories.");
+
+  footer.innerHTML = `
+    <div class="footer-container">
+      <div class="footer-brand-col">
+        <a class="brand footer-brand" data-site-brand href="/" aria-label="${escapeHtml(currentSiteName())} home">
+          ${siteBrandMarkup()}
+        </a>
+        <p class="footer-slogan">${slogan}</p>
+        <div class="footer-social-row">
+          ${facebook ? `
+            <a class="footer-social-btn" href="${escapeHtml(facebook)}" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+            </a>
+          ` : ""}
+          ${instagram ? `
+            <a class="footer-social-btn" href="${escapeHtml(instagram)}" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            </a>
+          ` : ""}
+        </div>
+      </div>
+
+      <div class="footer-nav-col">
+        <h4 class="footer-col-title">Discover & Plan</h4>
+        <ul class="footer-links-list">
+          <li><a href="/pages/countries.html">Explore destinations</a></li>
+          <li><a href="/pages/planner.html">Plan my trip</a></li>
+          <li><a href="/pages/hotels.html">Find hotels</a></li>
+          <li><a href="/pages/restaurants.html">Restaurants & dining</a></li>
+          <li><a href="/pages/flights.html">Flight search</a></li>
+          <li><a href="/pages/joy.html">✦ Joy AI Assistant</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-nav-col">
+        <h4 class="footer-col-title">Your Travel Space</h4>
+        <ul class="footer-links-list">
+          <li><a href="/pages/dashboard.html">Dashboard</a></li>
+          <li><a href="/pages/trips.html">My trips & itineraries</a></li>
+          <li><a href="/pages/album.html">Trip album & memories</a></li>
+          <li><a href="/pages/favourites.html">Saved favorites</a></li>
+          <li><a href="/pages/compare.html">Compare stays</a></li>
+          <li><a href="/pages/bookings.html">Manage bookings</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-nav-col">
+        <h4 class="footer-col-title">Company & Support</h4>
+        <ul class="footer-links-list">
+          <li><a href="/pages/about.html">About Journovo</a></li>
+          <li><a href="/pages/contact.html">Contact & support</a></li>
+          <li><a href="/pages/reviews.html">Community reviews</a></li>
+          <li><a href="/pages/notifications.html">Notifications</a></li>
+          ${phone ? `<li><a href="tel:${encodeURIComponent(phone)}" class="footer-phone-text">📞 ${escapeHtml(phone)}</a></li>` : ""}
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <p class="footer-copyright">© ${new Date().getFullYear()} ${escapeHtml(currentSiteName())}. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="/pages/about.html">Privacy</a>
+          <span aria-hidden="true">·</span>
+          <a href="/pages/about.html">Terms</a>
+          <span aria-hidden="true">·</span>
+          <a href="#top" class="footer-back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Back to top ↑</a>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function applySiteSettings() {
@@ -145,10 +227,77 @@ function enhanceFeedbackStates(root = document) {
   });
 }
 
+function ensureBootstrap() {
+  if (!document.querySelector('link[href*="bootstrap"]')) {
+    const linkGrid = document.createElement("link");
+    linkGrid.rel = "stylesheet";
+    linkGrid.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap-grid.min.css";
+    linkGrid.crossOrigin = "anonymous";
+    document.head.prepend(linkGrid);
+
+    const linkUtils = document.createElement("link");
+    linkUtils.rel = "stylesheet";
+    linkUtils.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap-utilities.min.css";
+    linkUtils.crossOrigin = "anonymous";
+    document.head.prepend(linkUtils);
+  }
+  if (!document.querySelector('script[src*="bootstrap"]')) {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js";
+    script.crossOrigin = "anonymous";
+    script.defer = true;
+    document.body.append(script);
+  }
+}
+
+export function initTheme() {
+  const saved = localStorage.getItem("journovo-theme");
+  const theme = saved === "dark" ? "dark" : "light";
+  applyTheme(theme, false);
+}
+
+export function applyTheme(theme, save = true) {
+  document.documentElement.dataset.theme = theme;
+  if (save) {
+    try { localStorage.setItem("journovo-theme", theme); } catch {}
+  }
+  updateThemeButtons(theme);
+}
+
+export function toggleTheme() {
+  const current = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(current, true);
+}
+
+function updateThemeButtons(theme) {
+  const isDark = theme === "dark";
+  document.querySelectorAll("[data-theme-toggle]").forEach(btn => {
+    btn.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+    btn.setAttribute("title", isDark ? "Switch to light theme" : "Switch to dark theme");
+    const mobileLabel = btn.querySelector(".theme-mobile-label");
+    const mobileIcon = btn.querySelector(".theme-mobile-icon");
+    if (mobileLabel) mobileLabel.textContent = isDark ? "Light mode" : "Dark mode";
+    if (mobileIcon) mobileIcon.textContent = isDark ? "☀️" : "🌙";
+  });
+}
+
 function enableAccessibilityEnhancements() {
+  initTheme();
+  ensureBootstrap();
   enhanceFormLabels();
   enhanceFeedbackStates();
   document.documentElement.style.setProperty("--app-ready", "1");
+
+  if (!window._themeListenerAttached) {
+    window._themeListenerAttached = true;
+    document.addEventListener("click", event => {
+      const btn = event.target.closest("[data-theme-toggle]");
+      if (btn) {
+        event.preventDefault();
+        toggleTheme();
+      }
+    });
+  }
 
   if (!document.querySelector('meta[name="theme-color"]')) {
     const theme = document.createElement("meta");
@@ -267,16 +416,7 @@ function enableExperienceEnhancements() {
   if (experienceReady) return;
   experienceReady = true;
   mountConnectionStatus();
-
-  const main = document.querySelector("main");
-  if (main && !main.id) main.id = "main-content";
-  if (main && !document.querySelector(".skip-link")) {
-    const skip = document.createElement("a");
-    skip.className = "skip-link";
-    skip.href = `#${main.id}`;
-    skip.textContent = "Skip to main content";
-    document.body.prepend(skip);
-  }
+  document.querySelectorAll(".skip-link").forEach(el => el.remove());
 
   document.addEventListener("invalid", event => {
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
@@ -356,49 +496,103 @@ export function mountNavigation(active = "") {
 
   const loggedIn = session.isLoggedIn();
   const user = session.user();
-  const navigationLinks = session.isAdmin()
-    ? [...links, ["Admin", "/pages/admin.html"], ["Create trip", "/pages/admin-create-trip.html"]]
-    : links;
   const rawProfileName = user?.first_name || user?.name || "Profile";
   const profileName = escapeHtml(rawProfileName);
   const profileInitial = escapeHtml(String(rawProfileName).trim().charAt(0).toUpperCase() || "T");
-  const mobileActions = loggedIn
-    ? `<a class="mobile-nav-action" href="/pages/profile.html">${profileName}</a><button class="mobile-nav-action" type="button" data-logout>Log out</button>`
-    : '<a class="mobile-nav-action" href="/pages/login.html">Sign in</a><a class="mobile-nav-action" href="/pages/register.html">Create account</a>';
+  const isMemberSpace = Boolean(document.querySelector("[data-sidebar]"));
 
-  host.innerHTML = `<header class="topbar">
-    <a class="brand" data-site-brand href="/" aria-label="${escapeHtml(currentSiteName())} home">${siteBrandMarkup()}</a>
-    <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span></button>
-    <nav id="primary-navigation" aria-label="Primary navigation">
-      ${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}
-      ${loggedIn ? '<a href="/pages/joy.html" aria-label="Chat with Joy">&#10022; Joy</a><a class="notification-link" href="/pages/notifications.html" aria-label="Notifications">Notifications <span class="nav-badge" data-nav-unread hidden></span></a>' : ""}
-      ${mobileActions}
-    </nav>
-    <div class="nav-actions">
-      ${loggedIn
-        ? `<a class="profile-link" href="/pages/profile.html"><span class="profile-avatar" aria-hidden="true">${profileInitial}</span>${profileName}</a><button class="button subtle" type="button" data-logout>Log out</button>`
-        : '<a class="button subtle" href="/pages/login.html">Sign in</a><a class="button" href="/pages/register.html">Create account</a>'}
-    </div>
-  </header>`;
+  if (isMemberSpace) {
+    host.innerHTML = `<header class="topbar member-topbar">
+      <a class="brand" data-site-brand href="/" aria-label="${escapeHtml(currentSiteName())} home">${siteBrandMarkup()}</a>
+      <div class="nav-actions member-nav-actions">
+        <button class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode" data-theme-toggle>
+          <span class="theme-icon-sun" aria-hidden="true">☀️</span>
+          <span class="theme-icon-moon" aria-hidden="true">🌙</span>
+        </button>
+        ${loggedIn ? `
+          <a class="nav-pill-link ${active === 'notifications' ? 'active' : ''}" href="/pages/notifications.html" aria-label="Notifications">
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
+            <span>Notifications</span>
+            <span class="nav-badge" data-nav-unread hidden></span>
+          </a>
+          <a class="nav-pill-link ${active === 'profile' ? 'active' : ''}" href="/pages/profile.html">
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+            <span>${profileName}</span>
+          </a>
+          <button class="nav-pill-btn" type="button" data-logout>
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+            <span>Log out</span>
+          </button>
+        ` : `
+          <a class="button subtle" href="/pages/login.html">Sign in</a>
+          <a class="button" href="/pages/register.html">Create account</a>
+        `}
+      </div>
+    </header>`;
+  } else {
+    const navigationLinks = session.isAdmin()
+      ? [...links, ["Admin", "/pages/admin.html"], ["Create trip", "/pages/admin-create-trip.html"]]
+      : links;
+    const themeMobileAction = `<button class="mobile-nav-action theme-mobile-toggle" type="button" data-theme-toggle><span class="theme-mobile-icon">🌙</span> <span class="theme-mobile-label">Dark mode</span></button>`;
+    const mobileActions = loggedIn
+      ? `<a class="mobile-nav-action" href="/pages/notifications.html">Notifications</a><a class="mobile-nav-action" href="/pages/profile.html">${profileName}</a><button class="mobile-nav-action" type="button" data-logout>Log out</button>${themeMobileAction}`
+      : `<a class="mobile-nav-action" href="/pages/login.html">Sign in</a><a class="mobile-nav-action" href="/pages/register.html">Create account</a>${themeMobileAction}`;
 
-  const nav = host.querySelector("nav");
-  const menuToggle = host.querySelector(".menu-toggle");
-  const closeMenu = () => {
-    nav.classList.remove("open");
-    menuToggle.setAttribute("aria-expanded", "false");
-  };
+    host.innerHTML = `<header class="topbar">
+      <a class="brand" data-site-brand href="/" aria-label="${escapeHtml(currentSiteName())} home">${siteBrandMarkup()}</a>
+      <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span></button>
+      <nav id="primary-navigation" aria-label="Primary navigation">
+        ${navigationLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}
+        ${loggedIn ? '<a href="/pages/joy.html" aria-label="Chat with Joy">&#10022; Joy</a>' : ""}
+        ${mobileActions}
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode" data-theme-toggle>
+          <span class="theme-icon-sun" aria-hidden="true">☀️</span>
+          <span class="theme-icon-moon" aria-hidden="true">🌙</span>
+        </button>
+        ${loggedIn ? `
+          <a class="nav-pill-link ${active === 'notifications' ? 'active' : ''}" href="/pages/notifications.html" aria-label="Notifications">
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
+            <span>Notifications</span>
+            <span class="nav-badge" data-nav-unread hidden></span>
+          </a>
+          <a class="nav-pill-link ${active === 'profile' ? 'active' : ''}" href="/pages/profile.html">
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+            <span>${profileName}</span>
+          </a>
+          <button class="nav-pill-btn" type="button" data-logout>
+            <span class="nav-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+            <span>Log out</span>
+          </button>
+        ` : `
+          <a class="button subtle" href="/pages/login.html">Sign in</a>
+          <a class="button" href="/pages/register.html">Create account</a>
+        `}
+      </div>
+    </header>`;
 
-  menuToggle.addEventListener("click", () => {
-    const open = nav.classList.toggle("open");
-    menuToggle.setAttribute("aria-expanded", String(open));
-  });
-  nav.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMenu));
-  host.addEventListener("keydown", event => {
-    if (event.key === "Escape") {
-      closeMenu();
-      menuToggle.focus();
+    const nav = host.querySelector("nav");
+    const menuToggle = host.querySelector(".menu-toggle");
+    if (nav && menuToggle) {
+      const closeMenu = () => {
+        nav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+      };
+      menuToggle.addEventListener("click", () => {
+        const open = nav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(open));
+      });
+      nav.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMenu));
+      host.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeMenu();
+          menuToggle.focus();
+        }
+      });
     }
-  });
+  }
+
   host.querySelectorAll("[data-logout]").forEach(button => button.addEventListener("click", async () => {
     try { await api.auth.logout(); } catch {}
     session.clear();
@@ -412,7 +606,8 @@ export function mountNavigation(active = "") {
     if (!badge || !count) return;
     badge.hidden = false;
     badge.textContent = count > 99 ? "99+" : String(count);
-    badge.closest("a").setAttribute("aria-label", `Notifications, ${count} unread`);
+    const bellLink = badge.closest("a");
+    if (bellLink) bellLink.setAttribute("aria-label", `Notifications, ${count} unread`);
   }).catch(() => {});
 }
 
@@ -438,19 +633,42 @@ export function mountSidebar(active = "") {
   enableAccessibilityEnhancements();
   const host = document.querySelector("[data-sidebar]");
   if (!host) return;
-  const sidebarLinks = [
-    ["Dashboard", "/pages/dashboard.html"],
-    ["My trips", "/pages/trips.html"],
-    ["Trip album", "/pages/album.html"],
-    ["Favorites", "/pages/favourites.html"],
-    ["Compare", "/pages/compare.html"],
-    ["Bookings", "/pages/bookings.html"],
-    ["Notifications", "/pages/notifications.html"],
-    ["Interests", "/pages/interests.html"],
-    ["Settings", "/pages/settings.html"],
-    ["Profile", "/pages/profile.html"]
+
+  const sidebarCategories = [
+    {
+      title: "YOUR TRAVEL SPACE",
+      items: [
+        ["Home", "/", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`],
+        ["Dashboard", "/pages/dashboard.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`],
+        ["My trips", "/pages/trips.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`],
+        ["Trip album", "/pages/album.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`],
+        ["Favorites", "/pages/favourites.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`],
+        ["Compare", "/pages/compare.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`],
+        ["Bookings", "/pages/bookings.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`]
+      ]
+    },
+    {
+      title: "PREFERENCES",
+      items: [
+        ["Interests", "/pages/interests.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>`],
+        ["Settings", "/pages/settings.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`],
+        ["Profile", "/pages/profile.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`]
+      ]
+    }
   ];
-  const content = `<aside class="sidebar"><p>YOUR TRAVEL SPACE</p>${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}</aside>`;
+
+  const content = `<aside class="sidebar member-sidebar">
+    ${sidebarCategories.map(group => `
+      <p class="sidebar-category-title">${group.title}</p>
+      ${group.items.map(([label, url, icon]) => `
+        <a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">
+          <span class="sidebar-icon" aria-hidden="true">${icon}</span>
+          <span>${label}</span>
+        </a>
+      `).join("")}
+    `).join("")}
+  </aside>`;
+
   mountCollapsibleSidebar(host, content, "Travel space menu", "account-sidebar");
 }
 
@@ -468,6 +686,7 @@ export function mountAdminSidebar(active = "") {
   const host = document.querySelector("[data-admin-sidebar]");
   if (!host) return;
   void loadSiteSettings();
+  const isDark = document.documentElement.dataset.theme === "dark";
   const sidebarLinks = [
     ["Dashboard", "/pages/admin.html"],
     ["Live inventory", "/pages/admin-inventory.html"],
@@ -480,7 +699,18 @@ export function mountAdminSidebar(active = "") {
     ["Reviews", "/pages/admin-reviews.html"],
     ["Site settings", "/pages/admin-settings.html"]
   ];
-  const content = `<aside class="sidebar admin-sidebar"><a class="admin-brand" data-site-brand="admin" href="/pages/admin.html">${siteBrandMarkup(true)}</a><p>ADMINISTRATION</p>${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}<button class="admin-logout" type="button" data-admin-logout>Log out</button></aside>`;
+  const content = `<aside class="sidebar admin-sidebar">
+    <div class="admin-sidebar-header">
+      <a class="admin-brand" data-site-brand="admin" href="/pages/admin.html">${siteBrandMarkup(true)}</a>
+      <button class="theme-toggle-btn admin-theme-toggle" type="button" data-theme-toggle aria-label="${isDark ? "Switch to light theme" : "Switch to dark theme"}" title="${isDark ? "Switch to light theme" : "Switch to dark theme"}">
+        <span class="theme-icon-sun" aria-hidden="true">☀️</span>
+        <span class="theme-icon-moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+    <p>ADMINISTRATION</p>
+    ${sidebarLinks.map(([label, url]) => `<a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">${label}</a>`).join("")}
+    <button class="admin-logout" type="button" data-admin-logout>Log out</button>
+  </aside>`;
   mountCollapsibleSidebar(host, content, "Administration menu", "admin-sidebar");
   host.querySelector("[data-admin-logout]").addEventListener("click", async () => {
     try { await api.auth.logout(); } catch {}

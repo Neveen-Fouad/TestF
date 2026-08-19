@@ -39,3 +39,40 @@
   .joy-composer .button span:first-child { display: none; }
   .joy-hint, .joy-status { padding-inline: 16px; }
 }
+
+/* Joy Chat Dark Mode Theme Overrides */
+[data-theme="dark"] .joy-shell {
+  background: #0f1c34;
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] .joy-header {
+  background: #0c172a;
+  border-bottom-color: var(--line);
+}
+[data-theme="dark"] .chat {
+  background: #091120;
+}
+[data-theme="dark"] .message {
+  background: #13243f;
+  border-color: var(--line);
+  color: #d2e3f8;
+}
+[data-theme="dark"] .message.mine {
+  background: linear-gradient(125deg, #0966cd, #2588ea);
+  color: #ffffff;
+}
+[data-theme="dark"] .joy-composer {
+  background: #0c172a;
+  border-top-color: var(--line);
+}
+[data-theme="dark"] .joy-composer input {
+  background: #11213b;
+  border-color: var(--line);
+  color: #d2e3f8;
+}
+[data-theme="dark"] .joy-status {
+  background: #112038;
+  border-top-color: var(--line);
+  color: #8ca3c3;
+}

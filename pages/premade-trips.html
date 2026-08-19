@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Browse Journovo's ready-made travel itineraries.">
   <title>Premade trips | Journovo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap-grid.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap-utilities.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="/src/pages/home.css">
   <link rel="stylesheet" href="/src/pages/premade-trips.css">
 </head>
@@ -23,10 +25,13 @@
           <h2 id="premade-trips-title">All premade trips</h2>
         </div>
       </div>
-      <div id="premade-trips" class="trip-grid" aria-live="polite"><div class="empty">Loading journeys…</div></div>
+      <div id="premade-trips" class="trip-grid" aria-live="polite">
+        <div class="empty">Loading journeys…</div>
+      </div>
     </section>
   </main>
   <footer class="footer">© 2026 Journovo. Make every journey yours.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
   <script src="/config.js"></script>
   <script type="module" src="/src/pages/premade-trips.js"></script>
 </body>

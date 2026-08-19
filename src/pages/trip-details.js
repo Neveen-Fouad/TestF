@@ -181,11 +181,12 @@ function canManageTrip(candidate) {
 function renderTrip() {
   tripTarget.hidden = false;
   const destination = trip.destination || "Trip itinerary";
+  const isAiTrip = Boolean(trip.is_ai_generated || trip.is_ai || trip.ai_generated);
   const standardActions = `<a class="button" href="/pages/trip-booking?id=${encodeURIComponent(id)}">Book this trip</a>`;
-  const reviewAction = ` <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a>`;
+  const reviewAction = isAiTrip ? ` <a class="button subtle" href="/pages/reviews.html?type=trip&id=${encodeURIComponent(id)}&name=${encodeURIComponent(destination)}">Write a review</a>` : "";
   const managementActions = canManageTrip(trip) ? ` <button class="button subtle" type="button" data-edit>Edit</button><button class="button subtle" type="button" data-delete>Delete</button>` : "";
   const actions = `${standardActions}${reviewAction}${managementActions}`;
-  tripTarget.innerHTML = `<div class="panel-heading"><div><div class="eyebrow">YOUR JOURNEY</div><h1>${escapeHtml(destination)}</h1><p class="trip-overview">${escapeHtml(trip.style || "Your live itinerary from Journovo.")} · ${escapeHtml(trip.number_of_days || "—")} days · ${escapeHtml(trip.number_of_travels || "—")} travellers · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated cost</p></div><div class="detail-actions">${actions}</div></div>`;
+  tripTarget.innerHTML = `<div class="panel-heading"><div><div class="eyebrow">${isAiTrip ? "AI GENERATED JOURNEY" : "YOUR JOURNEY"}</div><h1>${escapeHtml(destination)}</h1><p class="trip-overview">${escapeHtml(trip.style || "Your live itinerary from Journovo.")} · ${escapeHtml(trip.number_of_days || "—")} days · ${escapeHtml(trip.number_of_travels || "—")} travellers · $${escapeHtml(trip.estimated_expenses || trip.budget || "—")} estimated cost</p></div><div class="detail-actions">${actions}</div></div>`;
   tripTarget.querySelector("[data-edit]")?.addEventListener("click", () => {
     for (const key of ["destination", "classes", "number_of_travels", "budget", "estimated_expenses", "number_of_days", "start_date", "style"]) form.elements[key].value = key === "start_date" ? String(trip[key] || "").slice(0, 10) : trip[key] ?? "";
     tripTarget.hidden = true;
