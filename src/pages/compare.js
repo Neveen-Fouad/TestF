@@ -1,5 +1,5 @@
 import { api } from "../shared/api.js";
-import { escapeHtml, mountNavigation, mountSidebar, requireLogin } from "../shared/navigation.js";
+import { confirmModal, escapeHtml, mountNavigation, mountSidebar, requireLogin } from "../shared/navigation.js";
 
 mountNavigation();
 const target = document.querySelector("#comparison");
@@ -30,7 +30,12 @@ if (requireLogin()) {
           <button class="button subtle" type="button" data-remove-compare="${index}">Remove</button>
         </article>`;
       }).join("");
-      target.querySelectorAll("[data-remove-compare]").forEach(button => button.addEventListener("click", () => {
+      target.querySelectorAll("[data-remove-compare]").forEach(button => button.addEventListener("click", async () => {
+        if (!await confirmModal("Are you sure you want to remove this hotel from comparison?", {
+          title: "Remove from Comparison",
+          confirmText: "Remove",
+          danger: true
+        })) return;
         selected.splice(Number(button.dataset.removeCompare), 1);
         sessionStorage.setItem("journovo_compare_hotels", JSON.stringify(selected));
         location.reload();

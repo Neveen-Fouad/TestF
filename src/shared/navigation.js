@@ -644,7 +644,9 @@ export function mountSidebar(active = "") {
         ["Trip album", "/pages/album.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`],
         ["Favorites", "/pages/favourites.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`],
         ["Compare", "/pages/compare.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`],
-        ["Bookings", "/pages/bookings.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`]
+        ["Bookings", "/pages/bookings.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`],
+        ["Payments", "/pages/payments.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`],
+        ["My reviews", "/pages/reviews.html", `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`]
       ]
     },
     {
@@ -660,12 +662,15 @@ export function mountSidebar(active = "") {
   const content = `<aside class="sidebar member-sidebar">
     ${sidebarCategories.map(group => `
       <p class="sidebar-category-title">${group.title}</p>
-      ${group.items.map(([label, url, icon]) => `
-        <a class="${active === key(label) ? "active" : ""}" ${active === key(label) ? 'aria-current="page"' : ""} href="${url}">
+      ${group.items.map(([label, url, icon]) => {
+        const itemKey = key(label);
+        const isActive = active === itemKey || (itemKey === "my-reviews" && active === "reviews");
+        return `
+        <a class="${isActive ? "active" : ""}" ${isActive ? 'aria-current="page"' : ""} href="${url}">
           <span class="sidebar-icon" aria-hidden="true">${icon}</span>
           <span>${label}</span>
-        </a>
-      `).join("")}
+        </a>`;
+      }).join("")}
     `).join("")}
   </aside>`;
 
@@ -770,6 +775,67 @@ export const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char 
   "'": "&#39;",
   '"': "&quot;"
 })[char]);
+
+export function confirmModal(message, options = {}) {
+  return new Promise(resolve => {
+    const isDanger = options.danger ?? /delete|remove|reject|deactivate|cancel/i.test(message);
+    const title = options.title || (isDanger ? "Confirm Action" : "Please Confirm");
+    const confirmText = options.confirmText || (isDanger ? (options.actionText || "Confirm") : "Confirm");
+    const cancelText = options.cancelText || "Cancel";
+
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-dialog-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+
+    overlay.innerHTML = `
+      <div class="confirm-dialog-card">
+        <div class="confirm-dialog-header">
+          <div class="confirm-dialog-icon ${isDanger ? "is-danger" : "is-primary"}">
+            ${isDanger ? "⚠️" : "✦"}
+          </div>
+          <div>
+            <h3 class="confirm-dialog-title">${escapeHtml(title)}</h3>
+            <p class="confirm-dialog-message">${escapeHtml(message)}</p>
+          </div>
+        </div>
+        <div class="confirm-dialog-actions">
+          <button class="button subtle confirm-dialog-btn-cancel" type="button">${escapeHtml(cancelText)}</button>
+          <button class="button ${isDanger ? "confirm-dialog-btn-danger" : ""} confirm-dialog-btn-ok" type="button">${escapeHtml(confirmText)}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    let resolved = false;
+    const cleanup = (result) => {
+      if (resolved) return;
+      resolved = true;
+      overlay.classList.add("closing");
+      setTimeout(() => overlay.remove(), 160);
+      window.removeEventListener("keydown", handleKeyDown);
+      resolve(result);
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") cleanup(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    overlay.querySelector(".confirm-dialog-btn-cancel").addEventListener("click", () => cleanup(false));
+    overlay.querySelector(".confirm-dialog-btn-ok").addEventListener("click", () => cleanup(true));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cleanup(false);
+    });
+
+    setTimeout(() => {
+      overlay.querySelector(".confirm-dialog-btn-ok")?.focus();
+    }, 50);
+  });
+}
+
+window.confirmModal = confirmModal;
 
 window.addEventListener("journovo:unauthorized", () => {
   const returnTo = encodeURIComponent(location.pathname + location.search);

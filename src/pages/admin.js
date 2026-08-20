@@ -1,5 +1,5 @@
-import { api, rows } from "../shared/api.js";
-import { escapeHtml, mountAdminSidebar, notify, requireAdmin, updateSiteSettings } from "../shared/navigation.js";
+import { api, rows, session } from "../shared/api.js";
+import { confirmModal, escapeHtml, mountAdminSidebar, notify, requireAdmin, updateSiteSettings } from "../shared/navigation.js";
 import { constrainFutureDate } from "../shared/forms.js";
 
 const page = document.body.dataset.adminPage;
@@ -19,15 +19,13 @@ async function load() {
         try { await editAdminTrip(trip); await load(); } catch (error) { notify(error.message, true); }
       }));
       target.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
-        if (!confirm("Delete this trip? This cannot be undone.")) return;
+        if (!await confirmModal("Delete this trip? This cannot be undone.", { danger: true, confirmText: "Delete Trip" })) return;
         try { await api.trips.remove(button.dataset.deleteTrip); notify("Trip deleted."); await load(); } catch (error) { notify(error.message, true); }
       }));
       return;
     }
     if (page === "users") {
-      const users = rows(await api.admin.users());
-      target.innerHTML = `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead><tbody>${users.map(user => `<tr><td>${escapeHtml(user.name || `${user.first_name || ""} ${user.last_name || ""}`)}</td><td>${escapeHtml(user.email || "")}</td><td>${user.is_active ? "Active" : "Inactive"}</td><td><button class="button subtle" data-user="${escapeHtml(user.id)}" data-active="${user.is_active ? "0" : "1"}">${user.is_active ? "Deactivate" : "Activate"}</button></td></tr>`).join("")}</tbody></table></div>`;
-      target.querySelectorAll("[data-user]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.userStatus(button.dataset.user, button.dataset.active === "1"); load(); } catch (error) { notify(error.message, true); } }));
+      await loadAdminUsers(target);
       return;
     }
     if (page === "create-trip") {
@@ -109,9 +107,16 @@ async function load() {
         }) + controls : `<div class="empty">No ${activeStatus ? activeStatus : ""} reviews found.</div>`;
 
         target.querySelectorAll("[data-decision]").forEach(button => button.addEventListener("click", async () => {
+          const decision = button.dataset.decision;
+          const isApprove = decision === "approve";
+          if (!await confirmModal(`Are you sure you want to ${decision} this review?`, {
+            title: isApprove ? "Approve Review" : "Reject Review",
+            confirmText: isApprove ? "Approve" : "Reject",
+            danger: !isApprove
+          })) return;
           try {
-            await api.admin.reviewDecision(button.dataset.id, button.dataset.decision);
-            notify(`Review ${button.dataset.decision}d.`);
+            await api.admin.reviewDecision(button.dataset.id, decision);
+            notify(`Review ${isApprove ? "approved" : "rejected"} successfully.`);
             await loadReviews();
           } catch (error) {
             notify(error.message, true);
@@ -283,7 +288,7 @@ async function loadInterests(target) {
       try { await api.admin.updateInterest(button.dataset.editInterest, { name: name.trim() }); await render(); notify("Interest updated."); } catch (error) { notify(error.message, true); }
     }));
     target.querySelectorAll("[data-remove-interest]").forEach(button => button.addEventListener("click", async () => {
-      if (!confirm("Delete this interest?")) return;
+      if (!await confirmModal("Delete this interest? This action cannot be undone.", { danger: true, confirmText: "Delete Interest" })) return;
       try { await api.admin.removeInterest(button.dataset.removeInterest); await render(); notify("Interest deleted."); } catch (error) { notify(error.message, true); }
     }));
   };
@@ -298,12 +303,245 @@ async function loadInterests(target) {
 }
 
 async function loadComplaints(target) {
+  let selectedMessageId = null;
+
   const render = async () => {
+    target.innerHTML = '<div class="empty">Loading complaints…</div>';
     const messages = rows(await api.admin.messages());
-    target.innerHTML = cards(messages, item => `<p class="eyebrow">${escapeHtml(item.status || "PENDING")}</p><h3>${escapeHtml(item.title || "Complaint")}</h3><p>${escapeHtml(item.description || "")}</p><p>${escapeHtml(item.email || "")} · ${escapeHtml(item.phone || "")}</p><div class="detail-actions"><button class="button subtle" data-reply="${escapeHtml(item.id)}">Mark replied</button><button class="button subtle" data-delete-message="${escapeHtml(item.id)}">Delete</button></div>`);
-    target.querySelectorAll("[data-reply]").forEach(button => button.addEventListener("click", async () => { try { await api.admin.messageStatus(button.dataset.reply, "replied"); await render(); notify("Message marked replied."); } catch (error) { notify(error.message, true); } }));
-    target.querySelectorAll("[data-delete-message]").forEach(button => button.addEventListener("click", async () => { if (!confirm("Delete this contact message?")) return; try { await api.admin.removeMessage(button.dataset.deleteMessage); await render(); notify("Message deleted."); } catch (error) { notify(error.message, true); } }));
+
+    if (!messages.length) {
+      target.innerHTML = '<div class="empty">No contact messages or complaints found.</div>';
+      return;
+    }
+
+    target.innerHTML = `
+      <div id="complaints-list">
+        ${messages.map(item => {
+          const isPending = String(item.status || "pending").toLowerCase() === "pending";
+          const senderName = item.name || "Sender";
+          const title = item.title || "Complaint / Contact Message";
+          const date = item.created_at ? new Date(item.created_at).toLocaleDateString() : "";
+          return `
+            <article class="result-card complaint-card" data-complaint-card="${escapeHtml(item.id)}">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="eyebrow" style="margin: 0;">${escapeHtml(senderName)} ${date ? `· ${escapeHtml(date)}` : ""}</span>
+                <span class="${isPending ? "badge-unverified" : "badge-verified"}">${isPending ? "Pending" : "Replied"}</span>
+              </div>
+              <h3 style="margin: 0 0 6px;">${escapeHtml(title)}</h3>
+              <p style="margin: 0 0 8px; color: var(--muted); font-size: 13.5px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                ${escapeHtml(item.description || item.message || "")}
+              </p>
+              <p style="margin: 0 0 12px; font-size: 12.5px; color: var(--muted);">
+                ${item.email ? `📧 ${escapeHtml(item.email)}` : ""} ${item.phone ? `· 📞 ${escapeHtml(item.phone)}` : ""}
+              </p>
+              <div class="detail-actions">
+                <button class="button subtle" type="button" data-view-message="${escapeHtml(item.id)}">View Details</button>
+                <button class="button subtle" type="button" data-reply="${escapeHtml(item.id)}" data-current-status="${escapeHtml(item.status || "pending")}">
+                  ${isPending ? "Mark Replied" : "Mark Pending"}
+                </button>
+                <button class="button subtle" type="button" data-delete-message="${escapeHtml(item.id)}" style="color: #c81e1e;">Delete</button>
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+
+    // View message details using GET /api/admin/contact-messages/{id}
+    target.querySelectorAll("[data-view-message]").forEach(button => {
+      button.addEventListener("click", () => {
+        showMessageDetails(button.dataset.viewMessage);
+      });
+    });
+
+    // Mark replied / pending toggle
+    target.querySelectorAll("[data-reply]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const current = (button.dataset.currentStatus || "pending").toLowerCase();
+        const nextStatus = current === "replied" ? "pending" : "replied";
+        if (!await confirmModal(`Are you sure you want to mark this message as ${nextStatus}?`, {
+          title: "Update Message Status",
+          confirmText: `Mark ${nextStatus === "replied" ? "Replied" : "Pending"}`
+        })) return;
+        try {
+          await api.admin.messageStatus(button.dataset.reply, nextStatus);
+          notify(`Message marked as ${nextStatus}.`);
+          await render();
+        } catch (error) {
+          notify(error.message, true);
+        }
+      });
+    });
+
+    // Delete message
+    target.querySelectorAll("[data-delete-message]").forEach(button => {
+      button.addEventListener("click", async () => {
+        if (!await confirmModal("Delete this contact message? This cannot be undone.", {
+          title: "Delete Message",
+          confirmText: "Delete",
+          danger: true
+        })) return;
+        try {
+          await api.admin.removeMessage(button.dataset.deleteMessage);
+          notify("Contact message deleted.");
+          await render();
+        } catch (error) {
+          notify(error.message, true);
+        }
+      });
+    });
   };
+
+  const showMessageDetails = async (id) => {
+    selectedMessageId = id;
+    let modalOverlay = document.querySelector("#admin-message-modal-overlay");
+    if (!modalOverlay) {
+      modalOverlay = document.createElement("div");
+      modalOverlay.id = "admin-message-modal-overlay";
+      modalOverlay.className = "admin-modal-overlay";
+      document.body.appendChild(modalOverlay);
+    }
+
+    modalOverlay.innerHTML = `
+      <div class="admin-modal-card">
+        <div class="empty">Loading message details…</div>
+      </div>
+    `;
+
+    const closeModal = () => {
+      const existing = document.querySelector("#admin-message-modal-overlay");
+      if (existing) existing.remove();
+      selectedMessageId = null;
+    };
+
+    modalOverlay.onclick = (event) => {
+      if (event.target === modalOverlay) closeModal();
+    };
+
+    try {
+      const msg = await api.admin.message(id);
+      if (!msg) throw new Error("Message details could not be loaded.");
+
+      const isPending = String(msg.status || "pending").toLowerCase() === "pending";
+      const senderName = msg.name || "Sender";
+      const title = msg.title || "Complaint / Contact Message";
+      const created = msg.created_at ? new Date(msg.created_at).toLocaleString() : "—";
+      const description = msg.description || msg.message || "No content provided.";
+
+      modalOverlay.innerHTML = `
+        <div class="admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-msg-title">
+          <div class="admin-modal-header">
+            <div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                <span class="eyebrow" style="margin: 0;">MESSAGE #${escapeHtml(msg.id)}</span>
+                <span class="${isPending ? "badge-unverified" : "badge-verified"}">${isPending ? "Pending" : "Replied"}</span>
+              </div>
+              <h2 id="modal-msg-title" class="admin-modal-title">${escapeHtml(title)}</h2>
+            </div>
+            <button class="button subtle" type="button" id="close-modal-btn" aria-label="Close message" style="padding: 4px 10px; font-size: 14px;">✕</button>
+          </div>
+
+          <div class="admin-modal-info-grid">
+            <div class="admin-modal-info-item">
+              <span>From</span>
+              <strong>${escapeHtml(senderName)}</strong>
+            </div>
+            <div class="admin-modal-info-item">
+              <span>Date Submitted</span>
+              <strong>${escapeHtml(created)}</strong>
+            </div>
+            ${msg.email ? `
+              <div class="admin-modal-info-item">
+                <span>Email</span>
+                <strong><a href="mailto:${escapeHtml(msg.email)}" style="color: var(--blue); text-decoration: none;">${escapeHtml(msg.email)}</a></strong>
+              </div>
+            ` : ""}
+            ${msg.phone ? `
+              <div class="admin-modal-info-item">
+                <span>Phone</span>
+                <strong><a href="tel:${escapeHtml(msg.phone)}" style="color: var(--blue); text-decoration: none;">${escapeHtml(msg.phone)}</a></strong>
+              </div>
+            ` : ""}
+          </div>
+
+          <div class="admin-modal-body">
+            <span class="admin-modal-body-label">Message Content</span>
+            <div class="admin-modal-body-text">${escapeHtml(description)}</div>
+          </div>
+
+          <div class="admin-modal-actions">
+            <button class="button subtle" type="button" id="modal-reply-btn" data-id="${escapeHtml(msg.id)}" data-current="${escapeHtml(msg.status || "pending")}">
+              ${isPending ? "Mark Replied" : "Mark Pending"}
+            </button>
+            <button class="button subtle" type="button" id="modal-delete-btn" data-id="${escapeHtml(msg.id)}" style="color: #c81e1e;">
+              Delete
+            </button>
+            <button class="button" type="button" id="modal-done-btn">Done</button>
+          </div>
+        </div>
+      `;
+
+      modalOverlay.querySelectorAll("#close-modal-btn, #modal-done-btn").forEach(btn => {
+        btn.addEventListener("click", closeModal);
+      });
+
+      const replyBtn = modalOverlay.querySelector("#modal-reply-btn");
+      if (replyBtn) {
+        replyBtn.addEventListener("click", async () => {
+          const current = (replyBtn.dataset.current || "pending").toLowerCase();
+          const nextStatus = current === "replied" ? "pending" : "replied";
+          if (!await confirmModal(`Are you sure you want to mark this message as ${nextStatus}?`, {
+            title: "Update Message Status",
+            confirmText: `Mark ${nextStatus === "replied" ? "Replied" : "Pending"}`
+          })) return;
+          try {
+            await api.admin.messageStatus(msg.id, nextStatus);
+            notify(`Message marked as ${nextStatus}.`);
+            await render();
+            await showMessageDetails(id);
+          } catch (error) {
+            notify(error.message, true);
+          }
+        });
+      }
+
+      const deleteBtn = modalOverlay.querySelector("#modal-delete-btn");
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", async () => {
+          if (!await confirmModal("Delete this contact message? This cannot be undone.", {
+            title: "Delete Message",
+            confirmText: "Delete",
+            danger: true
+          })) return;
+          try {
+            await api.admin.removeMessage(msg.id);
+            notify("Contact message deleted.");
+            closeModal();
+            await render();
+          } catch (error) {
+            notify(error.message, true);
+          }
+        });
+      }
+    } catch (error) {
+      modalOverlay.innerHTML = `
+        <div class="admin-modal-card">
+          <div class="admin-modal-header">
+            <p class="eyebrow" style="margin: 0; color: #c81e1e;">ERROR</p>
+            <button class="button subtle" type="button" id="close-modal-btn">✕</button>
+          </div>
+          <p style="color: var(--muted); margin: 0 0 16px;">${escapeHtml(error.message || "Failed to load message details.")}</p>
+          <div class="admin-modal-actions">
+            <button class="button" type="button" id="modal-done-btn">Close</button>
+          </div>
+        </div>
+      `;
+      modalOverlay.querySelectorAll("#close-modal-btn, #modal-done-btn").forEach(btn => {
+        btn.addEventListener("click", closeModal);
+      });
+    }
+  };
+
   await render();
 }
 
@@ -335,5 +573,245 @@ async function loadAdminBookings(target) {
       document.querySelector("#client-options").innerHTML = '<option value="" disabled selected>Clients could not be loaded.</option>';
     }
   }
+  await render();
+}
+
+async function loadAdminUsers(target) {
+  let activeTab = "users"; // "users" | "admins"
+  let showCreateAdmin = false;
+
+  const render = async () => {
+    target.innerHTML = '<div class="empty">Loading accounts…</div>';
+    const allUsers = rows(await api.admin.users());
+    const currentAdmin = session.user();
+    const currentAdminId = currentAdmin?.id || currentAdmin?.user?.id;
+    const currentAdminEmail = (currentAdmin?.email || currentAdmin?.user?.email || "").toLowerCase();
+
+    const clientUsers = allUsers.filter(user => String(user.role).toLowerCase() !== "admin");
+    const adminUsers = allUsers.filter(user => String(user.role).toLowerCase() === "admin");
+
+    const clientTotal = clientUsers.length;
+    const clientActive = clientUsers.filter(u => u.is_active).length;
+    const clientInactive = clientTotal - clientActive;
+
+    const adminTotal = adminUsers.length;
+
+    target.innerHTML = `
+      <div class="inventory-tabs" style="margin-bottom: 18px;">
+        <button class="tab-button ${activeTab === "users" ? "active" : ""}" type="button" data-user-tab="users">
+          👤 Client Users (${clientTotal})
+        </button>
+        <button class="tab-button ${activeTab === "admins" ? "active" : ""}" type="button" data-user-tab="admins">
+          🛡️ Administrators (${adminTotal})
+        </button>
+      </div>
+
+      ${activeTab === "users" ? `
+        <!-- Client Users Tab -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 10px; font-size: 13px; color: var(--muted);">
+            <span>Total Clients: <strong style="color: var(--ink);">${clientTotal}</strong></span> ·
+            <span>Active: <strong style="color: var(--success, #0b8a4f);">${clientActive}</strong></span> ·
+            <span>Inactive: <strong style="color: #c81e1e;">${clientInactive}</strong></span>
+          </div>
+          <input id="user-search-input" type="search" placeholder="Search clients by name or email…" style="padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; min-width: 250px;">
+        </div>
+
+        ${clientUsers.length ? `
+          <div class="admin-table-wrap">
+            <table class="table" id="admin-users-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${clientUsers.map(user => {
+                  const fullName = user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unnamed User";
+                  return `
+                    <tr data-user-row="${escapeHtml(user.id)}" data-search-text="${escapeHtml((fullName + " " + (user.email || "")).toLowerCase())}">
+                      <td>#${escapeHtml(user.id)}</td>
+                      <td><strong>${escapeHtml(fullName)}</strong></td>
+                      <td>${escapeHtml(user.email || "—")}</td>
+                      <td><span class="${user.is_active ? "badge-active" : "badge-inactive"}">${user.is_active ? "Active" : "Inactive"}</span></td>
+                      <td style="text-align: right; white-space: nowrap;">
+                        <button class="button subtle" type="button" data-user="${escapeHtml(user.id)}" data-active="${user.is_active ? "0" : "1"}">
+                          ${user.is_active ? "Deactivate" : "Activate"}
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div class="empty">No client users registered on the platform.</div>'}
+      ` : `
+        <!-- Administrators Tab -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div>
+            <p style="margin: 0; color: var(--muted); font-size: 13px;">Manage platform administrator accounts and create new admins.</p>
+          </div>
+          <button class="button" type="button" id="toggle-create-admin-btn">
+            ${showCreateAdmin ? "✕ Close Form" : "+ Add New Admin"}
+          </button>
+        </div>
+
+        ${showCreateAdmin ? `
+          <article class="panel" style="margin-bottom: 24px; padding: 20px; border: 1px solid var(--blue); border-radius: 14px; background: var(--pale);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: var(--navy); font-size: 18px;">➕ Create Administrator Account</h3>
+              <button class="button subtle" type="button" id="cancel-create-admin">Cancel</button>
+            </div>
+            <form id="create-admin-form" class="form" style="margin-top: 12px;">
+              <div class="form-grid">
+                <div class="field">
+                  <label>First Name</label>
+                  <input name="first_name" type="text" placeholder="Admin First Name" required>
+                </div>
+                <div class="field">
+                  <label>Last Name</label>
+                  <input name="last_name" type="text" placeholder="Admin Last Name" required>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>Email Address</label>
+                  <input name="email" type="email" placeholder="admin@example.com" required>
+                </div>
+                <div class="field">
+                  <label>Initial Password (min 8 characters)</label>
+                  <input name="password" type="password" minlength="8" placeholder="••••••••" required>
+                </div>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select name="is_active">
+                  <option value="1" selected>Active</option>
+                  <option value="0">Inactive</option>
+                </select>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                <button class="button" type="submit">Create Admin</button>
+              </div>
+            </form>
+          </article>
+        ` : ""}
+
+        <div class="admin-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${adminUsers.map(admin => {
+                const fullName = admin.name || `${admin.first_name || ""} ${admin.last_name || ""}`.trim() || "Admin";
+                const isSelf = (currentAdminId && String(admin.id) === String(currentAdminId)) || (currentAdminEmail && String(admin.email).toLowerCase() === currentAdminEmail);
+                return `
+                  <tr>
+                    <td>#${escapeHtml(admin.id)}</td>
+                    <td>
+                      <strong>${escapeHtml(fullName)}</strong>
+                      ${isSelf ? '<span style="font-size: 11px; background: var(--blue); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You</span>' : ""}
+                    </td>
+                    <td>${escapeHtml(admin.email || "—")}</td>
+                    <td><span class="${admin.is_active ? "badge-active" : "badge-inactive"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      `}
+    `;
+
+    // Tab switching
+    target.querySelectorAll("[data-user-tab]").forEach(tabBtn => {
+      tabBtn.addEventListener("click", () => {
+        activeTab = tabBtn.dataset.userTab;
+        showCreateAdmin = false;
+        render();
+      });
+    });
+
+    // Client search filter
+    const searchInput = target.querySelector("#user-search-input");
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        target.querySelectorAll("#admin-users-table tbody tr").forEach(row => {
+          const match = !query || row.dataset.searchText.includes(query);
+          row.style.display = match ? "" : "none";
+        });
+      });
+    }
+
+    // Toggle client status
+    target.querySelectorAll("[data-user]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const willActivate = button.dataset.active === "1";
+        const actionText = willActivate ? "activate" : "deactivate";
+        if (!await confirmModal(`Are you sure you want to ${actionText} this user account?`, {
+          title: willActivate ? "Activate User" : "Deactivate User",
+          confirmText: willActivate ? "Activate" : "Deactivate",
+          danger: !willActivate
+        })) return;
+        try {
+          await api.admin.userStatus(button.dataset.user, willActivate);
+          notify(`User status updated to ${willActivate ? "Active" : "Inactive"}.`);
+          await render();
+        } catch (error) {
+          notify(error.message, true);
+        }
+      });
+    });
+
+    // Toggle create admin form
+    const toggleCreateBtn = target.querySelector("#toggle-create-admin-btn");
+    const cancelCreateBtn = target.querySelector("#cancel-create-admin");
+    if (toggleCreateBtn) {
+      toggleCreateBtn.addEventListener("click", () => {
+        showCreateAdmin = !showCreateAdmin;
+        render();
+      });
+    }
+    if (cancelCreateBtn) {
+      cancelCreateBtn.addEventListener("click", () => {
+        showCreateAdmin = false;
+        render();
+      });
+    }
+
+    // Create admin submit
+    const createAdminForm = target.querySelector("#create-admin-form");
+    if (createAdminForm) {
+      createAdminForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const formData = new FormData(createAdminForm);
+        const values = Object.fromEntries(formData);
+        values.role = "admin";
+        values.is_active = values.is_active === "1";
+
+        try {
+          await api.admin.createAdmin(values);
+          notify("Administrator account created successfully.");
+          showCreateAdmin = false;
+          await render();
+        } catch (error) {
+          notify(error.message, true);
+        }
+      });
+    }
+  };
+
   await render();
 }

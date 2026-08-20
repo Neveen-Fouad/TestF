@@ -548,9 +548,195 @@ body[data-admin-page] h1 {
 [data-theme="dark"] .admin-metric p {
   color: #8ca3c3;
 }
-[data-theme="dark"] .admin-metric strong {
-  color: #ecf3fe;
-}
 [data-theme="dark"] .admin-metric span {
   color: #8ca3c3;
+}
+
+/* Badges */
+.badge-role {
+  background: #eef4ff;
+  color: #1a56db;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-block;
+}
+.badge-active {
+  background: #e6f9f0;
+  color: #0b8a4f;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-block;
+}
+.badge-inactive {
+  background: #fde8e8;
+  color: #c81e1e;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+/* Complaints Grid Layout */
+#complaints-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+.complaint-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.complaint-card .detail-actions {
+  margin-top: auto;
+  padding-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.complaint-card .detail-actions .button {
+  margin-top: 0 !important;
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+/* Modal Overlay & Card for Message Details */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 18, 38, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: adminFadeIn 0.15s ease-out;
+}
+
+.admin-modal-card {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 24px 56px rgba(3, 18, 43, 0.28);
+  border: 1px solid var(--line);
+  padding: 24px 28px;
+  animation: adminModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+
+.admin-modal-title {
+  margin: 4px 0 0;
+  color: var(--navy);
+  font: 700 20px Georgia, serif;
+  line-height: 1.3;
+}
+
+.admin-modal-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  background: var(--pale);
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+
+.admin-modal-info-item span {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 3px;
+}
+
+.admin-modal-info-item strong {
+  font-size: 13.5px;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.admin-modal-body {
+  margin-bottom: 20px;
+}
+
+.admin-modal-body-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.admin-modal-body-text {
+  padding: 14px 16px;
+  background: var(--pale);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.admin-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+@keyframes adminFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes adminModalPop {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+[data-theme="dark"] .admin-modal-card {
+  background: #0d1a30;
+  border-color: var(--line);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .admin-modal-info-grid,
+[data-theme="dark"] .admin-modal-body-text {
+  background: #081222;
+  border-color: var(--line);
+  color: #d2e3f8;
+}
+
+[data-theme="dark"] .admin-modal-title,
+[data-theme="dark"] .admin-modal-info-item strong {
+  color: #ecf3fe;
 }

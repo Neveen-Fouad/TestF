@@ -1,1 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Payment | Journovo</title><link rel="stylesheet" href="/src/pages/account.css"></head><body><div data-navigation></div><main class="page split"><div data-sidebar></div><section><p class="eyebrow">PAYMENT</p><h1 id="payment-title">Payment history</h1><form id="payment-form" class="panel form" hidden><p>Confirm the booking below to create its payment.</p><div class="field"><label>Booking reference</label><input name="booking_id" readonly></div><button class="button">Pay securely</button></form><div id="payments" class="results"><div class="empty">Loading payments…</div></div></section></main><script src="/config.js"></script><script type="module" src="/src/pages/payments.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Payments | Journovo</title>
+  <link rel="stylesheet" href="/src/pages/payments.css">
+</head>
+<body>
+  <div data-navigation></div>
+  <main class="page split">
+    <div data-sidebar></div>
+    <section>
+      <div class="eyebrow">YOUR TRANSACTIONS</div>
+      <h1 id="payment-title">Payment history</h1>
+
+      <!-- Detail Card / Receipt Container -->
+      <div id="payment-detail-container" class="payment-detail-box" hidden></div>
+
+      <!-- Complete Payment Form (active when ?booking_id= is present) -->
+      <form id="payment-form" class="panel form" hidden style="margin-bottom: 24px;">
+        <h3>Complete booking payment</h3>
+        <p class="muted">Confirm your reservation details below to initiate a secure checkout.</p>
+        <div class="field">
+          <label for="booking-id-input">Booking reference</label>
+          <input id="booking-id-input" name="booking_id" readonly>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+          <button class="button" type="submit">Proceed to checkout →</button>
+          <a class="button subtle" href="/pages/bookings.html">Back to bookings</a>
+        </div>
+      </form>
+
+      <!-- Status Filter Tabs -->
+      <div id="payment-filter-tabs" class="payment-filters" style="margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="filter-tab active" type="button" data-filter="all">All transactions</button>
+        <button class="filter-tab" type="button" data-filter="paid">Paid & Completed</button>
+        <button class="filter-tab" type="button" data-filter="pending">Pending</button>
+        <button class="filter-tab" type="button" data-filter="failed">Failed / Cancelled</button>
+      </div>
+
+      <!-- Payments List Results -->
+      <div id="payments" class="results">
+        <div class="empty">Loading payments…</div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="payments-pagination" class="pagination-controls" style="margin-top: 24px;"></div>
+    </section>
+  </main>
+  <script src="/config.js"></script>
+  <script type="module" src="/src/pages/payments.js"></script>
+</body>
+</html>
+

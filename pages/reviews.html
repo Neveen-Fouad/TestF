@@ -3,39 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Reviews | Journovo</title>
+  <title>My Reviews | Journovo</title>
   <link rel="stylesheet" href="/src/pages/reviews.css">
 </head>
 <body>
   <div data-navigation></div>
-  <main class="page reviews-page">
-    <header>
-      <p class="eyebrow">COMMUNITY</p>
-      <h1>Traveler reviews</h1>
-      <p class="lead">Share a useful note from your latest journey.</p>
-    </header>
-    <div id="review-prompt" class="panel" hidden></div>
-    <form id="review-form" class="panel form" enctype="multipart/form-data">
-      <input name="type" type="hidden">
-      <input name="reviewable_id" type="hidden">
-      <div class="form-heading">
-        <p class="eyebrow">YOUR REVIEW</p>
-        <h2 id="review-context">Write a review</h2>
+  <main class="page split">
+    <div data-sidebar></div>
+    <section>
+      <div class="eyebrow">YOUR EXPERIENCES</div>
+      <h1 id="reviews-page-title">My reviews</h1>
+
+      <!-- Navigation Tabs -->
+      <div class="reviews-tabs" style="margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="filter-tab active" type="button" data-tab="mine">My reviews</button>
+        <button class="filter-tab" type="button" data-tab="write">+ Write a review</button>
       </div>
-      <div id="item-picker-field" class="field" hidden>
-        <label>Select trip or booking to review</label>
-        <select id="item-select" name="item_select">
-          <option value="">Loading your travel items…</option>
-        </select>
+
+      <!-- Edit Review Panel / Modal -->
+      <div id="review-edit-container" class="panel" hidden style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="margin: 0;">Edit review</h3>
+          <button class="button subtle" type="button" id="close-edit-review-btn" style="min-height: 32px; padding: 4px 10px;">✕ Cancel</button>
+        </div>
+        <form id="review-edit-form" class="form" enctype="multipart/form-data">
+          <input name="review_id" type="hidden">
+          <div class="field">
+            <label for="edit-rating-select">Rating</label>
+            <select id="edit-rating-select" name="rating" required>
+              <option value="5">5 — Excellent ★★★★★</option>
+              <option value="4">4 — Very good ★★★★☆</option>
+              <option value="3">3 — Good ★★★☆☆</option>
+              <option value="2">2 — Fair ★★☆☆☆</option>
+              <option value="1">1 — Poor ★☆☆☆☆</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="edit-description-textarea">Review comments</label>
+            <textarea id="edit-description-textarea" name="description" rows="4" required maxlength="2000"></textarea>
+          </div>
+          <div class="field">
+            <label for="edit-image-input">Update photo (optional)</label>
+            <input id="edit-image-input" name="image" type="file" accept="image/png,image/jpeg,image/jpg">
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <button class="button" type="submit">Save changes</button>
+            <button class="button subtle" type="button" id="cancel-edit-btn">Cancel</button>
+          </div>
+        </form>
       </div>
-      <div class="field"><label>Rating</label><select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></div>
-      <div class="field"><label>Review</label><textarea name="description" rows="5" required maxlength="2000"></textarea></div>
-      <div class="field"><label>Photo (optional)</label><input name="image" type="file" accept="image/png,image/jpeg"></div>
-      <button class="button">Submit review</button>
-    </form>
-    <div id="reviews" class="results"><div class="empty">Loading reviews…</div></div>
+
+      <!-- Write Review Form Container -->
+      <div id="review-write-container" hidden style="margin-bottom: 24px;">
+        <form id="review-form" class="panel form" enctype="multipart/form-data">
+          <input name="type" type="hidden">
+          <input name="reviewable_id" type="hidden">
+          <div class="form-heading">
+            <p class="eyebrow" style="margin-bottom: 4px;">NEW REVIEW</p>
+            <h2 id="review-context" style="margin-top: 0;">Write a review</h2>
+          </div>
+          <div id="item-picker-field" class="field">
+            <label for="item-select">Select trip or booking to review</label>
+            <select id="item-select" name="item_select">
+              <option value="">Loading your travel items…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="create-rating-select">Rating</label>
+            <select id="create-rating-select" name="rating" required>
+              <option value="5">5 — Excellent ★★★★★</option>
+              <option value="4">4 — Very good ★★★★☆</option>
+              <option value="3">3 — Good ★★★☆☆</option>
+              <option value="2">2 — Fair ★★☆☆☆</option>
+              <option value="1">1 — Poor ★☆☆☆☆</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="create-description-textarea">Review</label>
+            <textarea id="create-description-textarea" name="description" rows="5" required maxlength="2000" placeholder="Describe your experience, what you enjoyed, and tips for other travelers…"></textarea>
+          </div>
+          <div class="field">
+            <label for="create-image-input">Photo (optional)</label>
+            <input id="create-image-input" name="image" type="file" accept="image/png,image/jpeg,image/jpg">
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <button class="button" type="submit">Submit review</button>
+            <button class="button subtle" type="button" id="cancel-write-btn">Back to my reviews</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Reviews Results Grid -->
+      <div id="reviews" class="results">
+        <div class="empty">Loading your reviews…</div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div id="reviews-pagination" class="pagination-controls" style="margin-top: 24px;"></div>
+    </section>
   </main>
   <script src="/config.js"></script>
   <script type="module" src="/src/pages/reviews.js"></script>
 </body>
 </html>
+

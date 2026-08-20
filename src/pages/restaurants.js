@@ -74,6 +74,23 @@ function extractAward(award) {
   return "";
 }
 
+function extractRestaurantId(restaurant) {
+  if (!restaurant) return "";
+  if (restaurant.tripadvisor_entity_id) return String(restaurant.tripadvisor_entity_id);
+  if (restaurant.id) return String(restaurant.id);
+  if (restaurant.location_id) return String(restaurant.location_id);
+  if (restaurant.locationId) return String(restaurant.locationId);
+  if (restaurant.documentId) return String(restaurant.documentId);
+  if (restaurant.entity_id) return String(restaurant.entity_id);
+  if (restaurant.restaurant_id) return String(restaurant.restaurant_id);
+  
+  const link = restaurant.link || restaurant.web_url || "";
+  const match = link.match(/-d(\d+)-/);
+  if (match && match[1]) return match[1];
+
+  return restaurant.name || "";
+}
+
 async function searchRestaurants() {
   target.innerHTML = '<div class="empty">Finding restaurants…</div>';
   const values = Object.fromEntries(new FormData(form));
@@ -96,7 +113,7 @@ async function searchRestaurants() {
       ${items.map(item => {
         const restaurant = item.restaurant || item;
         const name = restaurant.name || restaurant.title || "Restaurant";
-        const id = restaurant.tripadvisor_entity_id || restaurant.id || restaurant.location_id || restaurant.locationId || restaurant.documentId;
+        const id = extractRestaurantId(restaurant);
         const address = extractAddress(restaurant);
         const cuisines = extractCuisines(restaurant);
         const rating = restaurant.rating || restaurant.averageRating || restaurant.score || null;
@@ -107,24 +124,33 @@ async function searchRestaurants() {
         const isOpen = restaurant.is_open_now ?? (statusText ? statusText.toLowerCase().includes("open") : null);
         const phone = restaurant.phone || restaurant.telephone || "";
         const menuLink = restaurant.menu_link || "";
-        const tripadvisorLink = restaurant.link || restaurant.web_url || "";
         const award = extractAward(restaurant.award);
         const snippet = restaurant.review_snippets?.[0]?.snippet_text?.replaceAll("\ufff9", "")?.replaceAll("\ufffb", "") || "";
+        const restaurantJson = JSON.stringify(restaurant);
+
+        // Pre-cache restaurant by ID
+        if (id) {
+          try {
+            sessionStorage.setItem(`restaurant_${id}`, restaurantJson);
+          } catch {}
+        }
+
+        const detailsUrl = `/pages/restaurant-details.html?id=${encodeURIComponent(id)}`;
 
         return `
-          <article class="result-card restaurant-card">
+          <article class="result-card restaurant-card" data-restaurant-card="${escapeHtml(id)}">
             ${image ? `
-              <div class="restaurant-image-wrap">
+              <a class="restaurant-image-wrap" href="${detailsUrl}" data-save-restaurant="${escapeHtml(id)}">
                 <img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" loading="lazy">
                 ${award ? `<span class="restaurant-award-badge">🏆 ${escapeHtml(award)}</span>` : ""}
-              </div>
+              </a>
             ` : ""}
             <div class="restaurant-content">
               <div class="restaurant-eyebrow-row">
                 <span class="eyebrow">${escapeHtml(values.city || "RESTAURANT")}</span>
                 ${statusText ? `<span class="status-pill ${isOpen ? "is-open" : "is-closed"}">${escapeHtml(statusText)}</span>` : ""}
               </div>
-              <h3 class="restaurant-name">${escapeHtml(name)}</h3>
+              <h3 class="restaurant-name"><a href="${detailsUrl}" data-save-restaurant="${escapeHtml(id)}">${escapeHtml(name)}</a></h3>
               ${address ? `<p class="restaurant-address">${escapeHtml(address)}</p>` : ""}
               <div class="restaurant-meta-row">
                 ${rating ? `<span class="restaurant-rating">★ ${escapeHtml(String(rating))}</span>` : ""}
@@ -136,7 +162,7 @@ async function searchRestaurants() {
               ${snippet ? `<blockquote class="restaurant-snippet">“${escapeHtml(snippet)}”</blockquote>` : ""}
               <div class="restaurant-actions">
                 ${menuLink ? `<a class="button subtle" href="${escapeHtml(menuLink)}" target="_blank" rel="noopener noreferrer">Menu ↗</a>` : ""}
-                ${tripadvisorLink ? `<a class="button subtle" href="${escapeHtml(tripadvisorLink)}" target="_blank" rel="noopener noreferrer">Tripadvisor ↗</a>` : ""}
+                <a class="button" href="${detailsUrl}" data-save-restaurant="${escapeHtml(id)}">View details →</a>
                 ${favouriteControl(id, "restaurant")}
               </div>
             </div>
@@ -149,6 +175,24 @@ async function searchRestaurants() {
 
     focusResults();
     bindFavouriteControls(target);
+
+    // Attach click listeners to cache clicked restaurant
+    target.querySelectorAll("[data-save-restaurant]").forEach(link => {
+      link.addEventListener("click", () => {
+        const id = link.dataset.saveRestaurant;
+        const itemObj = items.find(it => {
+          const r = it.restaurant || it;
+          return extractRestaurantId(r) === id;
+        });
+        if (itemObj) {
+          const r = itemObj.restaurant || itemObj;
+          sessionStorage.setItem("journovo_last_selected_restaurant_id", id);
+          sessionStorage.setItem("journovo_last_selected_restaurant", JSON.stringify(r));
+          sessionStorage.setItem(`restaurant_${id}`, JSON.stringify(r));
+        }
+      });
+    });
+
     target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
       currentPage += button.dataset.page === "prev" ? -1 : 1;
       searchRestaurants();

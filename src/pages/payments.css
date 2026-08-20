@@ -1,1 +1,218 @@
 @import "../shared/base.css";
+
+/* Payment Filter Tabs */
+.payment-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.filter-tab:hover {
+  background: var(--sky);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.filter-tab.active {
+  background: var(--navy);
+  color: #ffffff;
+  border-color: var(--navy);
+  box-shadow: 0 4px 12px rgba(8, 43, 97, .18);
+}
+
+/* Payment Status Badges */
+.payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.payment-status-badge.paid,
+.payment-status-badge.completed,
+.payment-status-badge.successful {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.payment-status-badge.pending {
+  background: #fef7e0;
+  color: #b06000;
+}
+
+.payment-status-badge.failed,
+.payment-status-badge.cancelled,
+.payment-status-badge.rejected {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+/* Payment Result Card */
+.payment-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.payment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.payment-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -.02em;
+  margin: 4px 0 0;
+}
+
+.payment-meta-list {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.payment-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 4px;
+}
+
+.payment-meta-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.payment-meta-row span:first-child {
+  color: var(--muted);
+}
+
+.payment-meta-row span:last-child {
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  word-break: break-all;
+}
+
+/* Payment Detail Panel */
+.payment-detail-box {
+  margin-bottom: 28px;
+  animation: fadeInUp .3s ease both;
+}
+
+.payment-detail-card {
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.payment-detail-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--blue), var(--warm));
+  content: "";
+}
+
+.payment-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.payment-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.payment-detail-item {
+  padding: 14px;
+  background: var(--sky);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.payment-detail-item small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+.payment-detail-item strong {
+  display: block;
+  color: var(--navy);
+  font-size: 15px;
+  word-break: break-all;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .filter-tab.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .payment-detail-item {
+  background: #13243f;
+}
+
+[data-theme="dark"] .payment-status-badge.paid,
+[data-theme="dark"] .payment-status-badge.completed,
+[data-theme="dark"] .payment-status-badge.successful {
+  background: #0f3622;
+  color: #4ade80;
+}
+
+[data-theme="dark"] .payment-status-badge.pending {
+  background: #38270b;
+  color: #facc15;
+}
+
+[data-theme="dark"] .payment-status-badge.failed,
+[data-theme="dark"] .payment-status-badge.cancelled,
+[data-theme="dark"] .payment-status-badge.rejected {
+  background: #3c1214;
+  color: #f87171;
+}

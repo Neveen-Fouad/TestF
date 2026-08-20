@@ -1,5 +1,5 @@
 import { api, rows } from "../shared/api.js";
-import { escapeHtml, mountNavigation, mountSidebar, notify, requireLogin } from "../shared/navigation.js";
+import { confirmModal, escapeHtml, mountNavigation, mountSidebar, notify, requireLogin } from "../shared/navigation.js";
 
 mountNavigation();
 if (requireLogin()) {
@@ -25,6 +25,11 @@ if (requireLogin()) {
       </article>`;
     }).join("") + controls : '<div class="empty">You have not saved anything yet.</div>';
     target.querySelectorAll("[data-remove]").forEach(button => button.addEventListener("click", async () => {
+      if (!await confirmModal("Are you sure you want to remove this item from your favorites?", {
+        title: "Remove from Favorites",
+        confirmText: "Remove",
+        danger: true
+      })) return;
       try {
         await api.favourites.remove(button.dataset.remove);
         await loadFavorites();

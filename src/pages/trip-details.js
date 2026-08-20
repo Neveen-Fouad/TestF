@@ -1,5 +1,5 @@
 import { api, rows, session } from "../shared/api.js";
-import { escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
+import { confirmModal, escapeHtml, mountNavigation, notify, requireLogin } from "../shared/navigation.js";
 
 mountNavigation("explore");
 const id = new URLSearchParams(location.search).get("id");
@@ -14,7 +14,8 @@ if (!id) {
   itineraryMeta.textContent = "Choose a trip to view its itinerary";
   daysTarget.innerHTML = "";
 } else if (requireLogin()) {
-  document.querySelector("#album-link").href = `/pages/album.html?trip_id=${encodeURIComponent(id)}`;
+  const albumLink = document.querySelector("#album-link");
+  if (albumLink) albumLink.hidden = true;
   loadTrip();
   form.addEventListener("submit", updateTrip);
   document.querySelector("[data-cancel-edit]").addEventListener("click", () => { form.hidden = true; tripTarget.hidden = false; });
@@ -28,10 +29,67 @@ async function loadTrip() {
     renderTrip();
     if (embeddedDays.length) renderDays(embeddedDays);
     await loadItinerary(embeddedDays);
+    await checkTripAlbumAccess();
     await loadTripReviews();
   } catch (error) {
     tripTarget.innerHTML = `<div class="empty is-error">${escapeHtml(error.message)}</div>`;
     daysTarget.innerHTML = "";
+  }
+}
+
+async function checkTripAlbumAccess() {
+  const albumLink = document.querySelector("#album-link");
+  if (!albumLink) return;
+  albumLink.style.display = "none";
+  albumLink.hidden = true;
+
+  if (!id) return;
+
+  try {
+    let isBooked = false;
+
+    // 1. Check user's my-trips list (which is populated via whereHas('clients', ...))
+    try {
+      const myTrips = rows(await api.trips.list());
+      if (myTrips.some(t => String(t.id) === String(id) || String(t.trip_id) === String(id) || String(t.template_trip_id) === String(id))) {
+        isBooked = true;
+      }
+    } catch {}
+
+    // 2. Check bookings
+    if (!isBooked) {
+      try {
+        const bookings = rows(await api.dashboard.bookings());
+        if (bookings.some(b => 
+          (b.type === "trip" || String(b.type).toLowerCase() === "trip") &&
+          (String(b.external_reference_id) === String(id) || String(b.details?.trip_id) === String(id) || String(b.trip_id) === String(id))
+        )) {
+          isBooked = true;
+        }
+      } catch {}
+    }
+
+    // 3. Fallback check memories endpoint
+    if (!isBooked) {
+      try {
+        const capsule = await api.memories.list(id);
+        if (capsule && !capsule.message && (capsule.unlocked !== undefined || Array.isArray(capsule) || Array.isArray(capsule.your_memories))) {
+          isBooked = true;
+        }
+      } catch {}
+    }
+
+    if (isBooked) {
+      albumLink.href = `/pages/album.html?trip_id=${encodeURIComponent(id)}`;
+      albumLink.style.display = "";
+      albumLink.hidden = false;
+    } else {
+      albumLink.style.display = "none";
+      albumLink.hidden = true;
+    }
+  } catch {
+    albumLink.style.display = "none";
+    albumLink.hidden = true;
   }
 }
 
@@ -193,7 +251,11 @@ function renderTrip() {
     form.hidden = false;
   });
   tripTarget.querySelector("[data-delete]")?.addEventListener("click", async () => {
-    if (!confirm("Delete this trip? This cannot be undone.")) return;
+    if (!await confirmModal("Delete this trip? This action cannot be undone.", {
+      title: "Delete Trip",
+      confirmText: "Delete",
+      danger: true
+    })) return;
     try { await api.trips.remove(id); location.assign("/pages/dashboard.html"); }
     catch (error) { notify(error.message, true); }
   });

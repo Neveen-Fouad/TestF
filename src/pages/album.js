@@ -6,7 +6,50 @@ if (requireLogin()) {
   mountSidebar("trip-album"); const tripSelect = document.querySelector("#album-trip"); const target = document.querySelector("#album-memories"); const summary = document.querySelector("#album-summary"); const form = document.querySelector("#memory-form");
   const renderMemory = item => { const type = item.type || "note"; const content = item.content || item.url || item.file_url || ""; const body = type === "photo" && content ? `<img src="${escapeHtml(content)}" alt="${escapeHtml(item.caption || "Trip memory")}">` : type === "voice" && content ? `<audio controls src="${escapeHtml(content)}"></audio>` : `<p>${escapeHtml(item.note || content || "A private trip note.")}</p>`; return `<article class="memory-card"><div class="memory-card-top"><span class="memory-kind ${type}">${type === "photo" ? "▧ Photo" : type === "voice" ? "◉ Voice" : "✎ Note"}</span><button data-delete="${item.id}" aria-label="Delete memory">×</button></div>${body}${item.caption ? `<h2>${escapeHtml(item.caption)}</h2>` : ""}<footer>${escapeHtml(item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Saved memory")}</footer></article>`; };
   async function loadMemories() { const id = tripSelect.value; if (!id) return; target.innerHTML = '<div class="empty">Opening your trip album…</div>'; try { const payload = await api.memories.list(id); const items = rows(payload); const unlocked = payload?.data?.unlocked ?? payload?.unlocked; summary.innerHTML = `<span>${unlocked ? "✦" : "⌁"}</span><p>${unlocked ? "Your time capsule is open — enjoy every shared memory." : "Your memories are safely collecting here. The shared capsule opens when the trip ends."}</p>`; target.innerHTML = items.length ? items.map(renderMemory).join("") : '<div class="empty">This album is waiting for its first memory.</div>'; target.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", async () => { try { await api.memories.remove(id, button.dataset.delete); notify("Memory removed."); loadMemories(); } catch (error) { notify(error.message, true); } })); } catch (error) { summary.innerHTML = '<span>!</span><p>This trip album is not available until the backend exposes the documented memories route.</p>'; target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; } }
-  try { const trips = rows(await api.trips.list()); const requestedTrip = new URLSearchParams(location.search).get("trip_id"); tripSelect.innerHTML = trips.length ? trips.map(trip => `<option value="${trip.id}">${escapeHtml(trip.destination || trip.name || `Trip #${trip.id}`)}</option>`).join("") : '<option value="">Create a trip before adding memories</option>'; if (requestedTrip && trips.some(trip => String(trip.id) === requestedTrip)) tripSelect.value = requestedTrip; if (trips.length) loadMemories(); } catch (error) { tripSelect.innerHTML = '<option value="">Trips are unavailable</option>'; target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+  try {
+    const allTrips = rows(await api.trips.list());
+    const requestedTrip = new URLSearchParams(location.search).get("trip_id");
+    
+    // Check which trips are booked by the user
+    let bookedTripIds = new Set();
+    try {
+      const bookings = rows(await api.dashboard.bookings());
+      bookings.forEach(b => {
+        if (b.type === "trip" || String(b.type).toLowerCase() === "trip") {
+          const tid = b.external_reference_id || b.details?.trip_id || b.trip_id;
+          if (tid) bookedTripIds.add(String(tid));
+        }
+      });
+    } catch {}
+
+    const accessibleTrips = [];
+    for (const trip of allTrips) {
+      if (bookedTripIds.has(String(trip.id))) {
+        accessibleTrips.push(trip);
+      } else {
+        try {
+          await api.memories.list(trip.id);
+          accessibleTrips.push(trip);
+        } catch {}
+      }
+    }
+
+    tripSelect.innerHTML = accessibleTrips.length
+      ? accessibleTrips.map(trip => `<option value="${trip.id}">${escapeHtml(trip.destination || trip.name || `Trip #${trip.id}`)}</option>`).join("")
+      : '<option value="">You have no booked trips with albums yet</option>';
+
+    if (requestedTrip && accessibleTrips.some(trip => String(trip.id) === requestedTrip)) {
+      tripSelect.value = requestedTrip;
+    }
+    if (accessibleTrips.length) loadMemories();
+    else {
+      target.innerHTML = '<div class="empty">Book a trip to unlock and save memories in your trip album.</div>';
+      summary.innerHTML = '<span>✦</span><p>Trip albums are exclusively unlocked for your confirmed booked journeys.</p>';
+    }
+  } catch (error) {
+    tripSelect.innerHTML = '<option value="">Trips are unavailable</option>';
+    target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+  }
   tripSelect.addEventListener("change", loadMemories);
   const typeTabs = [...document.querySelectorAll("[data-type]")];
   const selectType = button => {
