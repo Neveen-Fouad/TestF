@@ -1,7 +1,7 @@
 import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
 
-mountNavigation();
+mountNavigation("trips");
 
 const target = document.querySelector("#premade-trips");
 

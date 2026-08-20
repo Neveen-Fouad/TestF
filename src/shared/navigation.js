@@ -3,10 +3,10 @@ import { api, session } from "./api.js";
 const links = [
   ["Home", "/"],
   ["Explore", "/pages/countries.html"],
-  ["Plan my trip", "/pages/planner.html"],
   ["Hotels", "/pages/hotels.html"],
   ["Restaurants", "/pages/restaurants.html"],
   ["Flights", "/pages/flights.html"],
+  ["Trips", "/pages/premade-trips.html"],
   ["About", "/pages/about.html"],
   ["Contact", "/pages/contact.html"]
 ];
