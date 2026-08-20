@@ -11,15 +11,11 @@ description.addEventListener("input", () => { count.textContent = description.va
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
   try {
     await api.contact(Object.fromEntries(new FormData(form)));
     form.reset();
     count.textContent = "0";
-    notify("Your message is on its way. We’ll be in touch soon.");
+    notify("Your message is on its way. We'll be in touch soon.");
   } catch (error) {
     notify(error.message, true);
   }
