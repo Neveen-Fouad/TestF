@@ -29,6 +29,14 @@ if (requireLogin()) {
   await loadReviews();
 }
 
+const counter = form.querySelector("[data-count]");
+const textarea = form.querySelector("textarea[name='description']");
+if (counter && textarea) {
+  textarea.addEventListener("input", () => {
+    counter.textContent = textarea.value.length;
+  });
+}
+
 async function initReviewForm() {
   form.addEventListener("submit", submitReview);
 

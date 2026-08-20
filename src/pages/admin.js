@@ -133,9 +133,9 @@ async function load() {
       const settings = rows(await api.admin.settings());
       const current = settings[0] || {};
       form.elements.settings_id.value = current.id || "";
-      const fields = [["name", "Site name", "text"], ["phone", "Phone", "tel"], ["slogan", "Slogan", "text"], ["facebook", "Facebook URL", "url"], ["instagram", "Instagram URL", "url"], ["logo", "Logo", "file"]];
-      target.innerHTML = fields.map(([name, label, type]) => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" ${type === "file" ? 'accept="image/png,image/jpeg,image/svg+xml"' : `value="${escapeHtml(current[name] || "")}"`} ${current.id || type !== "file" ? "" : "required"}></div>`).join("");
-      form.addEventListener("submit", async event => { event.preventDefault(); const data = new FormData(form); const id = data.get("settings_id"); data.delete("settings_id"); if (!data.get("logo")?.size) data.delete("logo"); try { const result = id ? await api.admin.updateSettings(id, data) : await api.admin.createSettings(data); updateSiteSettings(result); notify("Site settings saved."); } catch (error) { notify(error.message, true); } });
+      const fields = [["name", "Site name", "text", "e.g. Journovo"], ["phone", "Phone", "tel", "+20 000 000 0000"], ["slogan", "Slogan", "text", "Make every journey yours."], ["facebook", "Facebook URL", "url", "https://facebook.com/..."], ["instagram", "Instagram URL", "url", "https://instagram.com/..."], ["logo", "Logo", "file", ""]];
+      target.innerHTML = fields.map(([name, label, type, placeholder]) => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" ${type === "file" ? 'accept="image/png,image/jpeg,image/svg+xml"' : `value="${escapeHtml(current[name] || "")}" placeholder="${escapeHtml(placeholder)}"`} ${current.id || type !== "file" ? "" : "required"}></div>`).join("");
+      form.addEventListener("submit", async event => { event.preventDefault(); if (!confirm("Save site settings? This will affect all visitors.")) return; const data = new FormData(form); const id = data.get("settings_id"); data.delete("settings_id"); if (!data.get("logo")?.size) data.delete("logo"); try { const result = id ? await api.admin.updateSettings(id, data) : await api.admin.createSettings(data); updateSiteSettings(result); notify("Site settings saved."); } catch (error) { notify(error.message, true); } });
     }
   } catch (error) { target.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
 }

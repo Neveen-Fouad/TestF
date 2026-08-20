@@ -28,8 +28,8 @@
           <option value="">Loading your travel items…</option>
         </select>
       </div>
-      <div class="field"><label>Rating</label><select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></div>
-      <div class="field"><label>Review</label><textarea name="description" rows="5" required maxlength="2000"></textarea></div>
+      <div class="field"><label>Rating</label><div class="star-rating" role="radiogroup" aria-label="Rating"><input type="radio" name="rating" value="5" id="star5" required hidden><label for="star5" class="star" aria-label="5 stars — Excellent">&#9733;</label><input type="radio" name="rating" value="4" id="star4" hidden><label for="star4" class="star" aria-label="4 stars — Very good">&#9733;</label><input type="radio" name="rating" value="3" id="star3" hidden><label for="star3" class="star" aria-label="3 stars — Good">&#9733;</label><input type="radio" name="rating" value="2" id="star2" hidden><label for="star2" class="star" aria-label="2 stars — Fair">&#9733;</label><input type="radio" name="rating" value="1" id="star1" hidden><label for="star1" class="star" aria-label="1 star — Poor">&#9733;</label></div></div>
+      <div class="field"><label>Review</label><textarea name="description" rows="5" required maxlength="2000" placeholder="Tell other travelers about your experience…"></textarea><small><span data-count>0</span> / 2000</small></div>
       <div class="field"><label>Photo (optional)</label><input name="image" type="file" accept="image/png,image/jpeg"></div>
       <button class="button">Submit review</button>
     </form>
