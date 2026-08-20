@@ -174,9 +174,10 @@ function renderFlights(values) {
       const data = extractFlightData(item);
       const id = String(item.id || start + index);
       const linkParameters = new URLSearchParams({ id, ...values });
+      const flightHref = `/pages/flight-details.html?${escapeHtml(linkParameters.toString())}`;
 
       return `
-        <article class="result-card flight-card">
+        <article class="result-card flight-card clickable-card" tabindex="0" role="link" aria-label="${escapeHtml(data.carrierName)} flight from ${escapeHtml(data.originCode)} to ${escapeHtml(data.destCode)}" data-card-href="${flightHref}">
           <div class="flight-header">
             <div class="flight-carrier-info">
               ${data.carrierLogo ? `<img class="flight-carrier-logo" src="${escapeHtml(data.carrierLogo)}" alt="${escapeHtml(data.carrierName)}" loading="lazy">` : `<span class="flight-carrier-icon">✈️</span>`}
@@ -219,7 +220,7 @@ function renderFlights(values) {
               <b class="flight-price-amount">${escapeHtml(data.priceText)}</b>
             </div>
             <div class="flight-actions">
-              <a class="button subtle" data-details="${start + index}" href="/pages/flight-details.html?${escapeHtml(linkParameters.toString())}">View details</a>
+              <a class="button subtle" data-details="${start + index}" href="${flightHref}">View details</a>
               ${favouriteControl(id, "flight")}
             </div>
           </div>
@@ -233,6 +234,20 @@ function renderFlights(values) {
   target.querySelectorAll("[data-details]").forEach(link => link.addEventListener("click", () => {
     sessionStorage.setItem("journovo_selected_flight", JSON.stringify({ ...flights[Number(link.dataset.details)], search: values }));
   }));
+  target.querySelectorAll(".flight-card.clickable-card").forEach(card => {
+    const href = card.dataset.cardHref;
+    if (!href) return;
+    card.addEventListener("click", event => {
+      if (event.target.closest("a, button")) return;
+      location.assign(href);
+    });
+    card.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && !event.target.closest("a, button")) {
+        event.preventDefault();
+        location.assign(href);
+      }
+    });
+  });
   bindFavouriteControls(target);
   focusResults();
   target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {

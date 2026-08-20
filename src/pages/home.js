@@ -2,14 +2,42 @@ import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
 
 mountNavigation("home");
+
+function navigateTo(href) {
+  location.assign(href);
+}
+
+function cardKeyboardActivate(handler) {
+  return event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handler();
+    }
+  };
+}
+
+document.querySelector(".hero-card")?.addEventListener("click", () => {
+  navigateTo("/pages/planner.html");
+});
+document.querySelector(".hero-card")?.addEventListener("keydown", cardKeyboardActivate(() => {
+  navigateTo("/pages/planner.html");
+}));
+
 document.querySelectorAll(".destination").forEach(card => {
   card.addEventListener("click", event => {
     const btn = card.querySelector("[data-plan-destination]");
     const dest = btn?.dataset.planDestination;
     if (dest) {
-      location.assign(`/pages/planner.html?destination=${encodeURIComponent(dest)}`);
+      navigateTo(`/pages/planner.html?destination=${encodeURIComponent(dest)}`);
     }
   });
+  card.addEventListener("keydown", cardKeyboardActivate(() => {
+    const btn = card.querySelector("[data-plan-destination]");
+    const dest = btn?.dataset.planDestination;
+    if (dest) {
+      navigateTo(`/pages/planner.html?destination=${encodeURIComponent(dest)}`);
+    }
+  }));
 });
 const target = document.querySelector("#home-trips");
 
@@ -52,8 +80,22 @@ function getTripImage(destination) {
 
 try {
   const trips = rows(await api.trips.preMade());
-  target.innerHTML = trips.length ? trips.slice(0, 3).map((trip, index) => {
-    const imageUrl = getTripImage(trip.destination || trip.country);
-    return `<article class="journey-card"><img src="${imageUrl}" alt="${escapeHtml(trip.destination)}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: -10px;"><div class="journey-number">0${index + 1}</div><div><p class="eyebrow">${escapeHtml(trip.destination || trip.country || "JOURNEY")}</p><h3>${escapeHtml(trip.style || trip.title || "A journey to make your own")}</h3><p>${escapeHtml(trip.number_of_days ? `${trip.number_of_days} days` : trip.description || "A thoughtfully paced escape, ready for your personal touch.")}</p></div><a class="text-action" href="/pages/trip-details?id=${trip.id}">View journey <span>→</span></a></article>`;
-  }).join("") : '<div class="empty">New journeys will appear here soon.</div>';
+  if (trips.length) {
+    target.innerHTML = trips.slice(0, 3).map((trip, index) => {
+      const imageUrl = getTripImage(trip.destination || trip.country);
+      const tripName = trip.style || trip.title || "A journey to make your own";
+      const href = `/pages/trip-details?id=${trip.id}`;
+      return `<article class="journey-card clickable-card" tabindex="0" role="link" aria-label="${escapeHtml(tripName)}" data-trip-href="${href}"><img src="${imageUrl}" alt="${escapeHtml(trip.destination)}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: -10px;"><div class="journey-number">0${index + 1}</div><div><p class="eyebrow">${escapeHtml(trip.destination || trip.country || "JOURNEY")}</p><h3>${escapeHtml(tripName)}</h3><p>${escapeHtml(trip.number_of_days ? `${trip.number_of_days} days` : trip.description || "A thoughtfully paced escape, ready for your personal touch.")}</p></div><a class="text-action" href="${href}" onclick="event.stopPropagation()">View journey <span aria-hidden="true">→</span></a></article>`;
+    }).join("");
+    target.querySelectorAll(".journey-card[data-trip-href]").forEach(card => {
+      const href = card.dataset.tripHref;
+      card.addEventListener("click", event => {
+        if (event.target.closest("a")) return;
+        navigateTo(href);
+      });
+      card.addEventListener("keydown", cardKeyboardActivate(() => navigateTo(href)));
+    });
+  } else {
+    target.innerHTML = '<div class="empty">New journeys will appear here soon.</div>';
+  }
 } catch { target.innerHTML = '<div class="empty">Journeys are unavailable right now. You can still start a plan of your own.</div>'; }

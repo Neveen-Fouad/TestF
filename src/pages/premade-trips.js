@@ -5,6 +5,19 @@ mountNavigation();
 
 const target = document.querySelector("#premade-trips");
 
+function navigateTo(href) {
+  location.assign(href);
+}
+
+function cardKeyboardActivate(handler) {
+  return event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handler();
+    }
+  };
+}
+
 const cityImages = {
   "cairo": "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=800&q=80",
   "egypt": "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=800&q=80",
@@ -44,7 +57,19 @@ function getTripImage(destination) {
 
 try {
   const trips = rows(await api.trips.preMade());
-  target.innerHTML = trips.length ? trips.map((trip, index) => renderTripCard(trip, index)).join("") : '<div class="empty">No premade trips are available right now.</div>';
+  if (trips.length) {
+    target.innerHTML = trips.map((trip, index) => renderTripCard(trip, index)).join("");
+    target.querySelectorAll(".journey-card[data-trip-href]").forEach(card => {
+      const href = card.dataset.tripHref;
+      card.addEventListener("click", event => {
+        if (event.target.closest("a")) return;
+        navigateTo(href);
+      });
+      card.addEventListener("keydown", cardKeyboardActivate(() => navigateTo(href)));
+    });
+  } else {
+    target.innerHTML = '<div class="empty">No premade trips are available right now.</div>';
+  }
 } catch {
   target.innerHTML = '<div class="empty">Journeys are unavailable right now. Please try again shortly.</div>';
 }
@@ -56,5 +81,6 @@ function renderTripCard(trip, index) {
   const description = trip.number_of_days ? `${trip.number_of_days} days` : trip.description || "A thoughtfully paced escape, ready for your personal touch.";
   const imageUrl = getTripImage(destination);
   if (!id) return `<article class="journey-card"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div></article>`;
-  return `<article class="journey-card premade-trip-card"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div><a class="text-action" href="/pages/trip-details?id=${trip.id}">View journey <span aria-hidden="true">→</span></a></article>`;
+  const href = `/pages/trip-details?id=${trip.id}`;
+  return `<article class="journey-card premade-trip-card clickable-card" tabindex="0" role="link" aria-label="${escapeHtml(title)}" data-trip-href="${href}"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div><a class="text-action" href="${href}" onclick="event.stopPropagation()">View journey <span aria-hidden="true">→</span></a></article>`;
 }

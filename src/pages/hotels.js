@@ -84,6 +84,21 @@ function bindHotelActions(hotels) {
     if (hotelId) sessionStorage.setItem("journovo_selected_hotel_id", hotelId);
   }));
 
+  target.querySelectorAll(".hotel-card.clickable-card").forEach(card => {
+    const href = card.dataset.cardHref;
+    if (!href) return;
+    card.addEventListener("click", event => {
+      if (event.target.closest("a, button, label")) return;
+      location.assign(href);
+    });
+    card.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && !event.target.closest("a, button, label")) {
+        event.preventDefault();
+        location.assign(href);
+      }
+    });
+  });
+
   target.querySelectorAll("[data-compare]").forEach(input => input.addEventListener("change", () => {
     const item = hotels[Number(input.dataset.compare)];
     let values = selected().filter(value => hotelKey(value) !== hotelKey(item));
@@ -128,12 +143,13 @@ function renderHotels(filters) {
   target.innerHTML = hotels.length ? `
     ${pageHotels.map((hotel, index) => {
       const data = extractHotelData(hotel);
+      const hotelHref = data.id ? `./hotel-details.html?id=${encodeURIComponent(data.id)}` : "";
       const detailsAction = data.id
-        ? `<a class="button subtle" data-details="${start + index}" href="./hotel-details.html?id=${encodeURIComponent(data.id)}">View details</a>`
+        ? `<a class="button subtle" data-details="${start + index}" href="${hotelHref}">View details</a>`
         : '<span class="muted">Details unavailable</span>';
 
       return `
-        <article class="result-card hotel-card">
+        <article class="result-card hotel-card${hotelHref ? ' clickable-card' : ''}"${hotelHref ? ` tabindex="0" role="link" aria-label="View details for ${escapeHtml(data.name)}" data-card-href="${escapeHtml(hotelHref)}"` : ""}>
           ${data.image ? `
             <div class="hotel-image-wrap">
               <img src="${escapeHtml(data.image)}" alt="${escapeHtml(data.name)}" loading="lazy">

@@ -58,6 +58,12 @@
   padding: 20px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
+  transition: background .2s ease, padding-inline .2s ease;
+}
+
+.notification-card:hover {
+  background: #f5f9fd;
+  padding-inline: 24px;
 }
 
 .notification-card > div {
@@ -126,6 +132,10 @@
 
 [data-theme="dark"] .notification-card {
   background: #0f1c34;
+}
+
+[data-theme="dark"] .notification-card:hover {
+  background: #15294a;
 }
 
 [data-theme="dark"] .notification-card.unread {

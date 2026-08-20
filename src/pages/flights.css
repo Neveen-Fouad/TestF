@@ -8,7 +8,16 @@
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  outline: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.flight-card:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: #bcd7f0;
 }
 .flight-card:hover {
   transform: translateY(-3px);
