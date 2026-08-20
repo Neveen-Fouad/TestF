@@ -123,7 +123,7 @@
   box-shadow: 0 32px 65px rgba(3, 29, 70, .28);
   transform: rotate(2deg);
   transition: transform .35s ease, box-shadow .35s ease;
-  animation: fadeInUp .6s ease .15s both;
+  animation: fadeInCard .6s ease .15s backwards;
 }
 
 .hero-card::after {
@@ -567,6 +567,11 @@
   max-width: 560px;
   color: var(--muted);
   line-height: 1.65;
+}
+
+@keyframes fadeInCard {
+  from { opacity: 0; transform: rotate(2deg) translateY(20px); }
+  to { opacity: 1; transform: rotate(2deg) translateY(0); }
 }
 
 @keyframes orbitFloat {

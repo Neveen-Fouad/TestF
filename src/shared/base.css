@@ -586,6 +586,27 @@ input[type="radio"] { accent-color: var(--blue); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 25px 0; }
 .toolbar .field { flex: 1; min-width: 170px; }
 
+/* Password visibility toggle */
+.password-wrapper { position: relative; }
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] { padding-right: 2.5rem; }
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: inherit;
+  opacity: 0.6;
+}
+.password-toggle:hover { opacity: 1; }
+
+/* Required-field asterisk */
+.field > label::after { content: ""; }
+
 /* Empty, loading, and status states */
 .empty {
   position: relative;

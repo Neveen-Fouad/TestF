@@ -214,6 +214,7 @@ function dateForDay(dayNumber) {
 
 async function updateTrip(event) {
   event.preventDefault();
+  if (!confirm("Save changes to this trip?")) return;
   const button = event.submitter;
   const values = Object.fromEntries(new FormData(form));
   for (const key of ["number_of_travels", "budget", "estimated_expenses", "number_of_days"]) values[key] = Number(values[key]);
