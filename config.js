@@ -23,3 +23,5 @@ if (isProduction) {
 window.JOURNOVO_CONFIG = Object.freeze({
   API_BASE_URL: window.JOURNOVO_API_BASE_URL || defaultApiUrl
 });
+
+//redeployment test
