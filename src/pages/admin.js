@@ -434,8 +434,8 @@ async function loadDashboard(target) {
     api.admin.tripStatistics(),
     api.admin.statistics(),
   ]);
-  const [reportPayload, tripPayload, userPayload] = results.map(
-    (result) => (result.status === "fulfilled" ? result.value : {}),
+  const [reportPayload, tripPayload, userPayload] = results.map((result) =>
+    result.status === "fulfilled" ? result.value : {},
   );
   const unavailable = [
     "Dashboard report",
@@ -718,9 +718,7 @@ async function loadComplaints(target) {
               </p>
               <div class="detail-actions">
                 <button class="button subtle" type="button" data-view-message="${escapeHtml(item.id)}">View Details</button>
-                <button class="button subtle" type="button" data-reply="${escapeHtml(item.id)}" data-current-status="${escapeHtml(item.status || "pending")}">
-                  ${isPending ? "Mark Replied" : "Mark Pending"}
-                </button>
+                ${isPending ? `<button class="button subtle" type="button" data-reply="${escapeHtml(item.id)}">Mark Replied</button>` : ""}
                 <button class="button subtle" type="button" data-delete-message="${escapeHtml(item.id)}" style="color: #c81e1e;">Delete</button>
               </div>
             </article>
@@ -738,26 +736,22 @@ async function loadComplaints(target) {
       });
     });
 
-    // Mark replied / pending toggle
+    // Mark replied
     target.querySelectorAll("[data-reply]").forEach((button) => {
       button.addEventListener("click", async () => {
-        const current = (
-          button.dataset.currentStatus || "pending"
-        ).toLowerCase();
-        const nextStatus = current === "replied" ? "pending" : "replied";
         if (
           !(await confirmModal(
-            `Are you sure you want to mark this message as ${nextStatus}?`,
+            "Are you sure you want to mark this message as replied?",
             {
               title: "Update Message Status",
-              confirmText: `Mark ${nextStatus === "replied" ? "Replied" : "Pending"}`,
+              confirmText: "Mark Replied",
             },
           ))
         )
           return;
         try {
-          await api.admin.messageStatus(button.dataset.reply, nextStatus);
-          notify(`Message marked as ${nextStatus}.`);
+          await api.admin.messageStatus(button.dataset.reply, "replied");
+          notify("Message marked as replied.");
           await render();
         } catch (error) {
           notify(error.message, true);
@@ -888,9 +882,7 @@ async function loadComplaints(target) {
           </div>
 
           <div class="admin-modal-actions">
-            <button class="button subtle" type="button" id="modal-reply-btn" data-id="${escapeHtml(msg.id)}" data-current="${escapeHtml(msg.status || "pending")}">
-              ${isPending ? "Mark Replied" : "Mark Pending"}
-            </button>
+            ${isPending ? `<button class="button subtle" type="button" id="modal-reply-btn" data-id="${escapeHtml(msg.id)}">Mark Replied</button>` : ""}
             <button class="button subtle" type="button" id="modal-delete-btn" data-id="${escapeHtml(msg.id)}" style="color: #c81e1e;">
               Delete
             </button>
@@ -908,21 +900,19 @@ async function loadComplaints(target) {
       const replyBtn = modalOverlay.querySelector("#modal-reply-btn");
       if (replyBtn) {
         replyBtn.addEventListener("click", async () => {
-          const current = (replyBtn.dataset.current || "pending").toLowerCase();
-          const nextStatus = current === "replied" ? "pending" : "replied";
           if (
             !(await confirmModal(
-              `Are you sure you want to mark this message as ${nextStatus}?`,
+              "Are you sure you want to mark this message as replied?",
               {
                 title: "Update Message Status",
-                confirmText: `Mark ${nextStatus === "replied" ? "Replied" : "Pending"}`,
+                confirmText: "Mark Replied",
               },
             ))
           )
             return;
           try {
-            await api.admin.messageStatus(msg.id, nextStatus);
-            notify(`Message marked as ${nextStatus}.`);
+            await api.admin.messageStatus(msg.id, "replied");
+            notify("Message marked as replied.");
             await render();
             await showMessageDetails(id);
           } catch (error) {
