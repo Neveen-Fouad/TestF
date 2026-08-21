@@ -45,7 +45,7 @@ async function load() {
             ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${totalPages} (${trips.length} trips)</span><button class="button subtle" type="button" data-page="next" ${currentPage >= totalPages ? "disabled" : ""}>Next →</button></div>`
             : "";
         target.innerHTML = trips.length
-          ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th><th>Actions</th></tr></thead><tbody>${shown.map((trip) => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td><td>${trip.id ? `<button class="button subtle" type="button" data-edit-trip="${escapeHtml(trip.id)}">Edit</button> <button class="button subtle" type="button" data-delete-trip="${escapeHtml(trip.id)}">Delete</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>${controls}`
+          ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th><th style="text-align: right;">Actions</th></tr></thead><tbody>${shown.map((trip) => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td><span class="trip-budget-cell">${escapeHtml(money(trip.budget))}</span></td><td><span class="trip-style-badge">${escapeHtml(trip.style || trip.classes || "—")}</span></td><td style="text-align: right; white-space: nowrap;">${trip.id ? `<button class="button subtle" type="button" data-edit-trip="${escapeHtml(trip.id)}">Edit</button> <button class="button subtle" type="button" data-delete-trip="${escapeHtml(trip.id)}">Delete</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>${controls}`
           : '<div class="empty">No trips were returned.</div>';
         target.querySelectorAll("[data-edit-trip]").forEach((button) =>
           button.addEventListener("click", async () => {
@@ -350,41 +350,154 @@ async function load() {
 }
 
 async function editAdminTrip(trip) {
-  const fields = [
-    ["destination", "Destination", trip.destination || trip.name || ""],
-    [
-      "start_date",
-      "Start date (YYYY-MM-DD)",
-      String(trip.start_date || "").slice(0, 10),
-    ],
-    ["number_of_days", "Number of days", trip.number_of_days || ""],
-    ["budget", "Budget", trip.budget || ""],
-    ["estimated_expenses", "Estimated expenses", trip.estimated_expenses || ""],
-    [
-      "number_of_travels",
-      "Travellers",
-      trip.number_of_travels || trip.travellers || "",
-    ],
-    ["style", "Travel style", trip.style || ""],
-  ];
-  const values = {};
-  for (const [key, label, current] of fields) {
-    const value = prompt(label, current);
-    if (value === null) return;
-    values[key] = value.trim();
+  let freshTrip = trip;
+  try {
+    const fetched = await api.trips.show(trip.id);
+    if (fetched) freshTrip = fetched.data || fetched;
+  } catch {}
+
+  const currentClass = String(freshTrip.classes || "economy").toLowerCase();
+
+  let modalOverlay = document.querySelector("#admin-trip-edit-modal-overlay");
+  if (!modalOverlay) {
+    modalOverlay = document.createElement("div");
+    modalOverlay.id = "admin-trip-edit-modal-overlay";
+    modalOverlay.className = "admin-modal-overlay";
+    document.body.appendChild(modalOverlay);
   }
-  for (const key of [
-    "number_of_days",
-    "budget",
-    "estimated_expenses",
-    "number_of_travels",
-  ]) {
-    values[key] = Number(values[key]);
-    if (!Number.isFinite(values[key]))
-      throw new Error(`${key.replaceAll("_", " ")} must be a valid number.`);
-  }
-  await api.trips.update(trip.id, values);
-  notify("Trip updated.");
+
+  return new Promise((resolve, reject) => {
+    const closeModal = () => {
+      if (modalOverlay) modalOverlay.remove();
+      resolve();
+    };
+
+    modalOverlay.innerHTML = `
+      <div class="admin-modal-card" role="dialog" aria-modal="true" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="admin-modal-header" style="position: sticky; top: 0; background: inherit; z-index: 2; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 3px;">
+              <span class="eyebrow" style="margin: 0;">TRIP #${escapeHtml(String(freshTrip.id))}</span>
+              <span style="font-size: 11px; background: rgba(14, 110, 217, 0.12); color: var(--blue); padding: 2px 7px; border-radius: 6px; font-weight: 700;">${freshTrip.is_ai_generated ? "AI Generated" : "Curated Journey"}</span>
+            </div>
+            <h2 class="admin-modal-title" style="margin: 0; font-family: Georgia, serif; font-size: 22px;">Edit Trip Details</h2>
+          </div>
+          <button class="button subtle" type="button" id="close-trip-edit-modal" style="padding: 4px 10px; font-size: 14px;">✕</button>
+        </div>
+
+        <form id="admin-trip-edit-form" class="form" style="margin-top: 16px;">
+          <div class="form-grid">
+            <div class="field">
+              <label>Destination</label>
+              <input name="destination" type="text" value="${escapeHtml(freshTrip.destination || freshTrip.name || "")}" required>
+            </div>
+            <div class="field">
+              <label>Start Date</label>
+              <input name="start_date" type="date" value="${escapeHtml(String(freshTrip.start_date || "").slice(0, 10))}" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Duration (Days)</label>
+              <input name="number_of_days" type="number" min="1" value="${escapeHtml(String(freshTrip.number_of_days || 1))}" required>
+            </div>
+            <div class="field">
+              <label>Travellers Count</label>
+              <input name="number_of_travels" type="number" min="1" value="${escapeHtml(String(freshTrip.number_of_travels || freshTrip.travellers || 1))}" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Travel Class / Tier</label>
+              <select name="classes">
+                <option value="economy" ${currentClass === "economy" ? "selected" : ""}>Economy</option>
+                <option value="premium economy" ${currentClass === "premium economy" ? "selected" : ""}>Premium Economy</option>
+                <option value="business" ${currentClass === "business" ? "selected" : ""}>Business</option>
+                <option value="first" ${currentClass === "first" ? "selected" : ""}>First Class</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Travel Style</label>
+              <input name="style" type="text" value="${escapeHtml(freshTrip.style || "")}" placeholder="e.g. Cultural & Historical" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Total Budget ($)</label>
+              <input name="budget" type="number" min="0" step="0.01" value="${escapeHtml(String(freshTrip.budget || 0))}" required>
+            </div>
+            <div class="field">
+              <label>Estimated Expenses ($)</label>
+              <input name="estimated_expenses" type="number" min="0" step="0.01" value="${escapeHtml(String(freshTrip.estimated_expenses || freshTrip.budget || 0))}" required>
+            </div>
+          </div>
+
+          <!-- Modal Actions Footer -->
+          <div class="admin-modal-actions" style="margin-top: 20px;">
+            <button class="button subtle" type="button" id="cancel-trip-edit">Cancel</button>
+            <button class="button" type="submit" id="save-trip-edit-btn">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    modalOverlay.onclick = (event) => {
+      if (event.target === modalOverlay) closeModal();
+    };
+
+    modalOverlay
+      .querySelector("#close-trip-edit-modal")
+      ?.addEventListener("click", closeModal);
+    modalOverlay
+      .querySelector("#cancel-trip-edit")
+      ?.addEventListener("click", closeModal);
+
+    const editForm = modalOverlay.querySelector("#admin-trip-edit-form");
+    if (editForm) {
+      editForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const submitBtn = editForm.querySelector("#save-trip-edit-btn");
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Saving…";
+        }
+        const formData = new FormData(editForm);
+        const values = Object.fromEntries(formData);
+
+        for (const key of [
+          "number_of_days",
+          "budget",
+          "estimated_expenses",
+          "number_of_travels",
+        ]) {
+          values[key] = Number(values[key]);
+          if (!Number.isFinite(values[key])) {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Save Changes";
+            }
+            notify(`${key.replaceAll("_", " ")} must be a valid number.`, true);
+            return;
+          }
+        }
+
+        try {
+          await api.trips.update(freshTrip.id, values);
+          notify("Trip updated successfully.");
+          closeModal();
+        } catch (error) {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Save Changes";
+          }
+          notify(error.message, true);
+        }
+      });
+    }
+  });
 }
 function addDailyDetail(container) {
   const nextDay =

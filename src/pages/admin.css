@@ -1010,4 +1010,96 @@ body[data-admin-page="bookings"] #admin-content > .empty {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+/* Trips Page Table Styling */
+body[data-admin-page="trips"] .admin-table-wrap {
+  border-radius: 16px;
+  border: 1px solid #dce7f3;
+  box-shadow: 0 4px 20px rgba(12, 53, 108, 0.05);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+body[data-admin-page="trips"] .table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+body[data-admin-page="trips"] .table th {
+  padding: 13px 18px;
+  background: #f6f9fc;
+  color: var(--navy);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e1ecf6;
+  white-space: nowrap;
+}
+
+body[data-admin-page="trips"] .table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf3f9;
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+body[data-admin-page="trips"] .table tbody tr {
+  transition: background 0.15s ease;
+}
+
+body[data-admin-page="trips"] .table tbody tr:hover {
+  background: #f8fbfe;
+}
+
+body[data-admin-page="trips"] .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+body[data-admin-page="trips"] .trip-budget-cell {
+  font-weight: 800;
+  color: var(--blue);
+  font-family: Georgia, serif;
+  font-size: 14.5px;
+}
+
+body[data-admin-page="trips"] .trip-style-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #edf3f9;
+  color: #4a6382;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+/* Dark theme for trips table */
+[data-theme="dark"] body[data-admin-page="trips"] .admin-table-wrap {
+  background: #0e1b2f;
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] body[data-admin-page="trips"] .table th {
+  background: #081220;
+  color: #ecf3fe;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] body[data-admin-page="trips"] .table td {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  color: #d2e3f8;
+}
+
+[data-theme="dark"] body[data-admin-page="trips"] .table tbody tr:hover {
+  background: #142747;
+}
+
+[data-theme="dark"] body[data-admin-page="trips"] .trip-style-badge {
+  background: #172842;
+  color: #9cb5d6;
+}
+
+
 
