@@ -30,9 +30,9 @@ if (requireLogin()) {
     const button = event.submitter;
     button.disabled = true;
     try {
-      const result = await api.trips.book(tripId);
-      const booking = result?.data || result;
-      location.assign(`/pages/payments?booking_id=${encodeURIComponent(booking.id || booking.booking_id || "")}`);
+      await api.trips.book(tripId);
+      notify("Trip booked successfully! Added to your trips.");
+      location.assign("/pages/trips.html");
     } catch (error) {
       notify(error.message, true);
       button.disabled = false;

@@ -76,7 +76,39 @@ loadTrips();
 
 async function loadTrips() {
   try {
-    allTrips = rows(await (memberView ? api.trips.list() : api.trips.preMade()));
+    if (memberView) {
+      const [tripsPayload, bookingsPayload] = await Promise.allSettled([
+        api.trips.list(),
+        api.dashboard.bookings()
+      ]);
+      const listTrips = tripsPayload.status === "fulfilled" ? rows(tripsPayload.value) : [];
+      const knownIds = new Set(listTrips.map(t => String(t.id || t.trip_id || "")));
+
+      let extraBookedTrips = [];
+      if (bookingsPayload.status === "fulfilled") {
+        const tripBookings = rows(bookingsPayload.value).filter(b => 
+          (b.type === "trip" || String(b.type).toLowerCase() === "trip") &&
+          (b.external_reference_id || b.details?.trip_id || b.trip_id)
+        );
+
+        const missingTripIds = [...new Set(
+          tripBookings
+            .map(b => String(b.external_reference_id || b.details?.trip_id || b.trip_id))
+            .filter(id => id && !knownIds.has(id))
+        )];
+
+        if (missingTripIds.length) {
+          const fetchedTrips = await Promise.allSettled(missingTripIds.map(id => api.trips.show(id)));
+          extraBookedTrips = fetchedTrips
+            .filter(r => r.status === "fulfilled" && r.value)
+            .map(r => r.value?.data || r.value);
+        }
+      }
+
+      allTrips = [...listTrips, ...extraBookedTrips];
+    } else {
+      allTrips = rows(await api.trips.preMade());
+    }
     currentPage = 1;
     renderTrips();
   } catch (error) {
