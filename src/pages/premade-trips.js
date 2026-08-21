@@ -1,5 +1,6 @@
 import { api, rows } from "../shared/api.js";
 import { escapeHtml, mountNavigation } from "../shared/navigation.js";
+import { bindFavouriteControls, favouriteControl } from "../shared/favourites.js";
 
 mountNavigation("trips");
 
@@ -59,10 +60,11 @@ try {
   const trips = rows(await api.trips.preMade());
   if (trips.length) {
     target.innerHTML = trips.map((trip, index) => renderTripCard(trip, index)).join("");
+    bindFavouriteControls(target);
     target.querySelectorAll(".journey-card[data-trip-href]").forEach(card => {
       const href = card.dataset.tripHref;
       card.addEventListener("click", event => {
-        if (event.target.closest("a")) return;
+        if (event.target.closest("a, button")) return;
         navigateTo(href);
       });
       card.addEventListener("keydown", cardKeyboardActivate(() => navigateTo(href)));
@@ -82,5 +84,5 @@ function renderTripCard(trip, index) {
   const imageUrl = getTripImage(destination);
   if (!id) return `<article class="journey-card"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div></article>`;
   const href = `/pages/trip-details?id=${trip.id}`;
-  return `<article class="journey-card premade-trip-card clickable-card" tabindex="0" role="link" aria-label="${escapeHtml(title)}" data-trip-href="${href}"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div><a class="text-action" href="${href}" onclick="event.stopPropagation()">View journey <span aria-hidden="true">→</span></a></article>`;
+  return `<article class="journey-card premade-trip-card clickable-card" tabindex="0" role="link" aria-label="${escapeHtml(title)}" data-trip-href="${href}"><img src="${imageUrl}" alt="${escapeHtml(destination)}"><div class="journey-number">${String(index + 1).padStart(2, "0")}</div><div><p class="eyebrow">${escapeHtml(destination)}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div><div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;"><a class="text-action" href="${href}" onclick="event.stopPropagation()">View journey <span aria-hidden="true">→</span></a>${favouriteControl(id, "trip")}</div></article>`;
 }

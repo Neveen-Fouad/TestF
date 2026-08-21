@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>My Reviews | Journovo</title>
   <link rel="stylesheet" href="/src/pages/reviews.css">
 </head>
+
 <body>
   <div data-navigation></div>
   <main class="page split">
@@ -24,7 +26,8 @@
       <div id="review-edit-container" class="panel" hidden style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
           <h3 style="margin: 0;">Edit review</h3>
-          <button class="button subtle" type="button" id="close-edit-review-btn" style="min-height: 32px; padding: 4px 10px;">✕ Cancel</button>
+          <button class="button subtle" type="button" id="close-edit-review-btn"
+            style="min-height: 32px; padding: 4px 10px;">✕ Cancel</button>
         </div>
         <form id="review-edit-form" class="form" enctype="multipart/form-data">
           <input name="review_id" type="hidden">
@@ -80,7 +83,9 @@
           </div>
           <div class="field">
             <label for="create-description-textarea">Review</label>
-            <textarea id="create-description-textarea" name="description" rows="5" required maxlength="2000" placeholder="Describe your experience, what you enjoyed, and tips for other travelers…"></textarea>
+            <textarea id="create-description-textarea" name="description" rows="5" required maxlength="2000"
+              placeholder="Describe your experience, what you enjoyed, and tips for other travelers…"></textarea>
+            <small><span data-count>0</span> / 2000</small>
           </div>
           <div class="field">
             <label for="create-image-input">Photo (optional)</label>
@@ -105,5 +110,5 @@
   <script src="/config.js"></script>
   <script type="module" src="/src/pages/reviews.js"></script>
 </body>
-</html>
 
+</html>

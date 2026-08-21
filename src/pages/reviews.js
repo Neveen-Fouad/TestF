@@ -86,6 +86,15 @@ if (requireLogin()) {
       await initCreateForm();
     }
 
+    // Character counter for create form textarea
+    const createCounter = createForm?.querySelector("[data-count]");
+    const createTextarea = createForm?.querySelector("textarea[name='description']");
+    if (createCounter && createTextarea) {
+      createTextarea.addEventListener("input", () => {
+        createCounter.textContent = createTextarea.value.length;
+      });
+    }
+
     // Load initial tab content
     await switchTab(activeTab);
   }
@@ -380,6 +389,7 @@ if (requireLogin()) {
       createForm.elements.rating.value = "5";
       createForm.elements.type.value = "";
       createForm.elements.reviewable_id.value = "";
+      if (createCounter) createCounter.textContent = "0";
 
       // Switch to My Reviews tab to view the submitted review
       await switchTab("mine");
