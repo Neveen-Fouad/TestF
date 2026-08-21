@@ -12,16 +12,30 @@ async function load() {
     if (page === "bookings") { await loadAdminBookings(target); return; }
     if (page === "trips") {
       const trips = rows(await api.trips.list());
-      target.innerHTML = trips.length ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th><th>Actions</th></tr></thead><tbody>${trips.map(trip => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td><td>${trip.id ? `<button class="button subtle" type="button" data-edit-trip="${escapeHtml(trip.id)}">Edit</button> <button class="button subtle" type="button" data-delete-trip="${escapeHtml(trip.id)}">Delete</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No trips were returned.</div>';
-      target.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", async () => {
-        const trip = trips.find(item => String(item.id) === button.dataset.editTrip);
-        if (!trip) return;
-        try { await editAdminTrip(trip); await load(); } catch (error) { notify(error.message, true); }
-      }));
-      target.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
-        if (!await confirmModal("Delete this trip? This cannot be undone.", { danger: true, confirmText: "Delete Trip" })) return;
-        try { await api.trips.remove(button.dataset.deleteTrip); notify("Trip deleted."); await load(); } catch (error) { notify(error.message, true); }
-      }));
+      const pageSize = 10;
+      let currentPage = 1;
+      const renderTrips = () => {
+        const totalPages = Math.ceil(trips.length / pageSize);
+        currentPage = Math.min(Math.max(1, currentPage), Math.max(totalPages, 1));
+        const shown = trips.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+        const controls = totalPages > 1 ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${totalPages} (${trips.length} trips)</span><button class="button subtle" type="button" data-page="next" ${currentPage >= totalPages ? "disabled" : ""}>Next →</button></div>` : "";
+        target.innerHTML = trips.length ? `<div class="admin-table-wrap"><table class="table"><thead><tr><th>Destination</th><th>Dates</th><th>Travellers</th><th>Budget</th><th>Style</th><th>Actions</th></tr></thead><tbody>${shown.map(trip => `<tr><td><strong>${escapeHtml(trip.destination || trip.name || "Untitled trip")}</strong></td><td>${escapeHtml(dateRange(trip))}</td><td>${escapeHtml(trip.number_of_travels || trip.travellers || "—")}</td><td>${escapeHtml(money(trip.budget))}</td><td>${escapeHtml(trip.style || trip.classes || "—")}</td><td>${trip.id ? `<button class="button subtle" type="button" data-edit-trip="${escapeHtml(trip.id)}">Edit</button> <button class="button subtle" type="button" data-delete-trip="${escapeHtml(trip.id)}">Delete</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>${controls}` : '<div class="empty">No trips were returned.</div>';
+        target.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", async () => {
+          const trip = trips.find(item => String(item.id) === button.dataset.editTrip);
+          if (!trip) return;
+          try { await editAdminTrip(trip); await load(); } catch (error) { notify(error.message, true); }
+        }));
+        target.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
+          if (!await confirmModal("Delete this trip? This cannot be undone.", { danger: true, confirmText: "Delete Trip" })) return;
+          try { await api.trips.remove(button.dataset.deleteTrip); notify("Trip deleted."); await load(); } catch (error) { notify(error.message, true); }
+        }));
+        target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+          currentPage += button.dataset.page === "prev" ? -1 : 1;
+          renderTrips();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }));
+      };
+      renderTrips();
       return;
     }
     if (page === "users") {
@@ -304,6 +318,8 @@ async function loadInterests(target) {
 
 async function loadComplaints(target) {
   let selectedMessageId = null;
+  const pageSize = 10;
+  let currentPage = 1;
 
   const render = async () => {
     target.innerHTML = '<div class="empty">Loading complaints…</div>';
@@ -314,9 +330,14 @@ async function loadComplaints(target) {
       return;
     }
 
+    const totalPages = Math.ceil(messages.length / pageSize);
+    currentPage = Math.min(Math.max(1, currentPage), Math.max(totalPages, 1));
+    const shownMessages = messages.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const controls = totalPages > 1 ? `<div class="pagination-controls"><button class="button subtle" type="button" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${totalPages} (${messages.length} complaints)</span><button class="button subtle" type="button" data-page="next" ${currentPage >= totalPages ? "disabled" : ""}>Next →</button></div>` : "";
+
     target.innerHTML = `
       <div id="complaints-list">
-        ${messages.map(item => {
+        ${shownMessages.map(item => {
           const isPending = String(item.status || "pending").toLowerCase() === "pending";
           const senderName = item.name || "Sender";
           const title = item.title || "Complaint / Contact Message";
@@ -345,6 +366,7 @@ async function loadComplaints(target) {
           `;
         }).join("")}
       </div>
+      ${controls}
     `;
 
     // View message details using GET /api/admin/contact-messages/{id}
@@ -390,6 +412,12 @@ async function loadComplaints(target) {
         }
       });
     });
+
+    target.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+      currentPage += button.dataset.page === "prev" ? -1 : 1;
+      render();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
   };
 
   const showMessageDetails = async (id) => {
