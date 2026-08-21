@@ -433,23 +433,19 @@ async function loadDashboard(target) {
     api.admin.dashboardStatistics(filters),
     api.admin.tripStatistics(),
     api.admin.statistics(),
-    api.admin.revenue(),
   ]);
-  const [reportPayload, tripPayload, userPayload, revenuePayload] = results.map(
+  const [reportPayload, tripPayload, userPayload] = results.map(
     (result) => (result.status === "fulfilled" ? result.value : {}),
   );
   const unavailable = [
     "Dashboard report",
     "Trip statistics",
     "User statistics",
-    "Revenue",
   ].filter((_, index) => results[index].status === "rejected");
   const report = unwrap(reportPayload);
   const tripStats = { ...(report.trip_stats || {}), ...unwrap(tripPayload) };
   const userStats = { ...(report.user_stats || {}), ...unwrap(userPayload) };
-  const revenue = number(
-    unwrap(revenuePayload).total_revenue ?? tripStats.total_revenue,
-  );
+  const revenue = number(tripStats.total_revenue) * COMMISSION_RATE;
   const revenueSeries = Array.isArray(report.trip_stats?.revenue_last_6_months)
     ? report.trip_stats.revenue_last_6_months
     : [];
@@ -464,8 +460,8 @@ async function loadDashboard(target) {
     { label: "New this month", value: number(userStats.monthly_users) },
   ];
   target.innerHTML = `${unavailable.length ? `<div class="admin-warning">Partial data: ${escapeHtml(unavailable.join(", "))} could not be loaded.</div>` : ""}<section class="admin-metrics" aria-label="Dashboard summary">
-    ${metric("Total revenue", money(revenue), "All booking revenue")}
-    ${metric("Monthly revenue", money(tripStats.monthly_revenue), report.period_label || "Selected period")}
+    ${metric("Total revenue", money(revenue), "3% commission on all bookings")}
+    ${metric("Monthly revenue", money(number(tripStats.monthly_revenue) * COMMISSION_RATE), report.period_label || "Selected period")}
     ${metric("Total trips", number(tripStats.total_trips), `${number(tripStats.monthly_trips)} this month`)}
     ${metric("Total users", number(userStats.total_users), `${number(userStats.monthly_users)} this month`)}
   </section><section class="admin-charts">
@@ -604,6 +600,8 @@ function cards(items, content) {
         .join("")
     : '<div class="empty">No records returned.</div>';
 }
+
+const COMMISSION_RATE = 0.03;
 
 async function loadInterests(target) {
   const form = document.querySelector("#interest-form");
