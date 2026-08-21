@@ -978,6 +978,7 @@ async function loadAdminBookings(target) {
         '<div class="empty">Select a client to view their bookings.</div>';
       return;
     }
+    target.innerHTML = '<div class="empty">Loading bookings…</div>';
     const bookingType = form.elements.type.value;
     const source =
       bookingType === "hotels"
@@ -990,13 +991,193 @@ async function loadAdminBookings(target) {
       bookingType === "trips"
         ? bookings.filter((booking) => booking.type === "trip")
         : bookings;
-    target.innerHTML = shownBookings.length
-      ? cards(
-          shownBookings,
-          (item) =>
-            `<p class="eyebrow">${escapeHtml(item.status || item.type || "BOOKING")}</p><h3>${escapeHtml(item.details?.hotel_name || item.details?.airline || item.details?.destination || item.provider_name || item.name || "Booking")}</h3><p>${escapeHtml(item.check_in_date || item.booking_date || item.created_at || "")}</p><p>${escapeHtml(item.total_price != null ? `${item.currency || "USD"} ${item.total_price}` : "Price unavailable")}</p>`,
-        )
-      : '<div class="empty">No bookings found for this client.</div>';
+
+    const pageSize = 6;
+    let currentPage = 1;
+
+    const renderAdminBookingCard = (item) => {
+      const type = String(item.type || "booking").toLowerCase();
+      const typeIcon =
+        type === "hotel"
+          ? "🏨 HOTEL"
+          : type === "flight"
+            ? "✈️ FLIGHT"
+            : type === "trip"
+              ? "🌍 TRIP"
+              : "📋 BOOKING";
+      const status = String(item.status || "pending").toLowerCase();
+      const isConfirmed = ["confirmed", "completed", "paid"].includes(status);
+      const isCanceled = [
+        "canceled",
+        "cancelled",
+        "failed",
+        "rejected",
+      ].includes(status);
+      const statusBadge = isConfirmed
+        ? "badge-verified"
+        : isCanceled
+          ? "badge-inactive"
+          : "badge-unverified";
+      const statusLabel = isConfirmed
+        ? "Confirmed"
+        : isCanceled
+          ? "Canceled"
+          : "Pending";
+
+      const details = item.details || {};
+      let title = "Booking Reservation";
+      let subtitle = item.provider || "Journovo";
+
+      if (type === "hotel") {
+        title =
+          details.hotel_name ||
+          item.provider_name ||
+          `Hotel Reservation #${item.id}`;
+        subtitle = details.city || item.provider || "Accommodations";
+      } else if (type === "flight") {
+        title = details.airline
+          ? `${details.airline} Flight`
+          : item.provider_name || `Flight #${item.id}`;
+        subtitle =
+          details.departure_airport && details.arrival_airport
+            ? `${details.departure_airport} → ${details.arrival_airport}`
+            : "Air Travel";
+      } else if (type === "trip") {
+        title = details.destination || item.destination || "Trip Journey";
+        subtitle = details.style
+          ? `Style: ${details.style}`
+          : "Curated Itinerary";
+      }
+
+      let dateDisplay = "—";
+      if (item.check_in_date && item.check_out_date) {
+        const inDate = String(item.check_in_date).slice(0, 10);
+        const outDate = String(item.check_out_date).slice(0, 10);
+        const days = item.number_of_days
+          ? ` (${item.number_of_days} days)`
+          : "";
+        dateDisplay = `${inDate} → ${outDate}${days}`;
+      } else if (item.check_in_date) {
+        dateDisplay = String(item.check_in_date).slice(0, 10);
+      } else if (item.booking_date || item.created_at) {
+        dateDisplay = String(item.booking_date || item.created_at).slice(0, 10);
+      }
+
+      const count =
+        item.number_of_bookings ||
+        details.guests ||
+        details.passengers ||
+        details.number_of_travels ||
+        1;
+      const travelersDisplay = `${count} ${type === "flight" ? "passenger(s)" : type === "hotel" ? "guest(s)" : "traveler(s)"}`;
+      const classDisplay =
+        item.classes || details.room_class || details.cabin_class || "Standard";
+      const refDisplay = item.external_reference_id
+        ? `#${item.external_reference_id}`
+        : `#${item.id}`;
+
+      const bookedAt =
+        item.created_at || item.booking_date
+          ? new Date(item.created_at || item.booking_date).toLocaleDateString(
+              undefined,
+              { year: "numeric", month: "short", day: "numeric" },
+            )
+          : "—";
+
+      const priceNum = Number(item.total_price);
+      const priceDisplay = Number.isFinite(priceNum)
+        ? `${item.currency || "USD"} ${priceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : item.total_price || "Free / Included";
+
+      const typeClass =
+        type === "hotel" ? "hotel" : type === "flight" ? "flight" : "trip";
+      const statusClass = isConfirmed
+        ? "confirmed"
+        : isCanceled
+          ? "canceled"
+          : "pending";
+      const statusDot = isConfirmed ? "●" : isCanceled ? "✕" : "⏳";
+
+      return `
+        <article class="admin-booking-card type-${escapeHtml(typeClass)}">
+          <div class="admin-booking-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="admin-booking-pill pill-${escapeHtml(typeClass)}">
+                ${escapeHtml(typeIcon)}
+              </span>
+              <span class="admin-booking-ref-chip">#${escapeHtml(String(item.id))}</span>
+            </div>
+            <span class="admin-booking-status status-${escapeHtml(statusClass)}">
+              ${statusDot} ${escapeHtml(statusLabel)}
+            </span>
+          </div>
+
+          <div>
+            <h3 class="admin-booking-title">${escapeHtml(title)}</h3>
+            <p class="admin-booking-subtitle">
+              ${escapeHtml(subtitle)}
+            </p>
+          </div>
+
+          <div class="admin-booking-grid">
+            <div class="admin-booking-grid-item">
+              <span>Schedule / Dates</span>
+              <strong>${escapeHtml(dateDisplay)}</strong>
+            </div>
+            <div class="admin-booking-grid-item">
+              <span>Travelers / Guests</span>
+              <strong>${escapeHtml(travelersDisplay)}</strong>
+            </div>
+            <div class="admin-booking-grid-item">
+              <span>Class / Tier</span>
+              <strong>${escapeHtml(classDisplay)}</strong>
+            </div>
+            <div class="admin-booking-grid-item">
+              <span>Reference ID</span>
+              <strong>${escapeHtml(refDisplay)}</strong>
+            </div>
+          </div>
+
+          <div class="admin-booking-footer">
+            <div class="booked-meta">
+              <span>📅 Booked: ${escapeHtml(bookedAt)}</span>
+            </div>
+            <div class="price-block">
+              <span class="price-label">Total Amount</span>
+              <span class="price-value">${escapeHtml(priceDisplay)}</span>
+            </div>
+          </div>
+        </article>
+      `;
+    };
+
+    const renderPage = () => {
+      const totalPages = Math.ceil(shownBookings.length / pageSize);
+      currentPage = Math.min(Math.max(1, currentPage), Math.max(totalPages, 1));
+      const pagedBookings = shownBookings.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      );
+
+      const controls =
+        totalPages > 1
+          ? `<div class="pagination-controls" style="margin-top: 18px; grid-column: 1 / -1;"><button class="button subtle" type="button" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>← Previous</button><span>Page ${currentPage} of ${totalPages} (${shownBookings.length} bookings)</span><button class="button subtle" type="button" data-page="next" ${currentPage >= totalPages ? "disabled" : ""}>Next →</button></div>`
+          : "";
+
+      target.innerHTML = pagedBookings.length
+        ? pagedBookings.map(renderAdminBookingCard).join("") + controls
+        : '<div class="empty">No bookings found for this client.</div>';
+
+      target.querySelectorAll("[data-page]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentPage += btn.dataset.page === "prev" ? -1 : 1;
+          renderPage();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    };
+
+    renderPage();
   };
   if (!form.dataset.ready) {
     form.dataset.ready = "true";
@@ -1008,22 +1189,22 @@ async function loadAdminBookings(target) {
     });
     try {
       const users = rows(await api.admin.users());
-      const clients = users
-        .map((user) => {
-          const clientId =
-            user.client_id ||
-            user.client?.id ||
-            (user.role === "user" ? user.id : null);
-          const name =
-            user.name ||
-            `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
-            user.email ||
-            "Client";
-          return clientId
-            ? `<option value="${escapeHtml(clientId)}">${escapeHtml(name)} — client #${escapeHtml(clientId)}</option>`
-            : "";
-        })
-        .filter(Boolean);
+      const clientUsers = users.filter(
+        (user) => String(user.role).toLowerCase() !== "admin",
+      );
+      const clients = clientUsers.map((user, index) => {
+        const clientId =
+          user.client_id ||
+          user.client?.id ||
+          index + 1;
+        const name =
+          user.name ||
+          `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+          user.email ||
+          "Client";
+        const email = user.email ? ` (${user.email})` : "";
+        return `<option value="${escapeHtml(clientId)}">${escapeHtml(name)}${escapeHtml(email)} — client #${escapeHtml(clientId)}</option>`;
+      });
       document.querySelector("#client-options").innerHTML = clients.length
         ? '<option value="" disabled selected>Select a client...</option>' +
           clients.join("")
