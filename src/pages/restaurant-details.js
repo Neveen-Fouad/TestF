@@ -159,12 +159,6 @@ async function renderRestaurantDetails() {
   const statusText = restaurant.status_text || (restaurant.is_open_now === true ? "Open now" : restaurant.is_open_now === false ? "Closed" : "");
   const isOpen = restaurant.is_open_now ?? (statusText ? statusText.toLowerCase().includes("open") : null);
   const award = extractAward(restaurant.award);
-  const coordinates = restaurant.coordinates || {};
-  const lat = coordinates.latitude;
-  const lng = coordinates.longitude;
-  const mapQuery = lat && lng ? `${lat},${lng}` : encodeURIComponent(`${name}, ${address}`);
-  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
-
   const reservationProviders = Array.isArray(restaurant.reservation_providers) ? restaurant.reservation_providers : [];
   const primaryReservation = reservationProviders[0];
 
@@ -223,11 +217,6 @@ async function renderRestaurantDetails() {
             <a href="tel:${escapeHtml(phone)}" style="color: var(--blue); font-weight: 700; text-decoration: underline;">${escapeHtml(phone)}</a>
           </p>
         ` : ""}
-        <div style="margin-top: auto;">
-          <a class="button subtle" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener noreferrer" style="width: 100%; justify-content: center;">
-            🗺️ Open in Google Maps ↗
-          </a>
-        </div>
       </section>
 
       <!-- Operating Hours Card -->

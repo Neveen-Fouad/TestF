@@ -296,16 +296,13 @@ if (requireLogin()) {
             ` : ""}
           </div>
 
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="button subtle" type="button" onclick="window.print()">
-              🖨 Print receipt
-            </button>
-            ${String(payment.status).toLowerCase() === "pending" && payment.booking_id ? `
+          ${String(payment.status).toLowerCase() === "pending" && payment.booking_id ? `
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px;">
               <a class="button" href="/pages/payments.html?booking_id=${encodeURIComponent(payment.booking_id)}">
                 Complete checkout →
               </a>
-            ` : ""}
-          </div>
+            </div>
+          ` : ""}
         </article>
       `;
 
